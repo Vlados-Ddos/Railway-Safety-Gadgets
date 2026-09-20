@@ -1,0 +1,528 @@
+{
+  "format": 1,
+  "source": "S2_5M_Locomotive_Signal.blend",
+  "sourceSHA256": "e55c512c6090a4489cee557e4564731e9fe3319db3b4b280f8fa9ed7e4b2ab48",
+  "sourceBoundsMin": [
+    -0.07999999821186066,
+    -0.22100000083446503,
+    -0.11249999701976776
+  ],
+  "sourceBoundsMax": [
+    0.07999999821186066,
+    0.22100000083446503,
+    0.012000000104308128
+  ],
+  "size": [
+    0.1599999964237213,
+    0.44200000166893005,
+    0.12449999898672104
+  ],
+  "materials": [
+    {
+      "name": "S2_5M_Dark_Painted_Steel",
+      "color": [
+        0.94,
+        0.94,
+        0.94,
+        1
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "alpha": 1.0,
+      "textures": {
+        "albedo": "S2_5M_Albedo.png",
+        "roughness": "S2_5M_Roughness.png",
+        "metallic": "S2_5M_Metallic.png",
+        "normal": "S2_5M_Normal.png",
+        "ao": "S2_5M_AO.png",
+        "emission": "S2_5M_Emission.png",
+        "normalUnity": "S2_5M_Normal_UnityAG.png",
+        "metallicSmoothness": "S2_5M_Roughness_MetallicSmoothness.png"
+      }
+    },
+    {
+      "name": "S2_5M_Bare_Metal",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "alpha": 1.0,
+      "textures": {
+        "albedo": "S2_5M_Albedo.png",
+        "roughness": "S2_5M_Roughness.png",
+        "metallic": "S2_5M_Metallic.png",
+        "normal": "S2_5M_Normal.png",
+        "ao": "S2_5M_AO.png",
+        "emission": "S2_5M_Emission.png",
+        "normalUnity": "S2_5M_Normal_UnityAG.png",
+        "metallicSmoothness": "S2_5M_Roughness_MetallicSmoothness.png"
+      }
+    },
+    {
+      "name": "S2_5M_Painted_Gray",
+      "color": [
+        0.94,
+        0.94,
+        0.94,
+        1
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "alpha": 1.0,
+      "textures": {
+        "albedo": "S2_5M_Albedo.png",
+        "roughness": "S2_5M_Roughness.png",
+        "metallic": "S2_5M_Metallic.png",
+        "normal": "S2_5M_Normal.png",
+        "ao": "S2_5M_AO.png",
+        "emission": "S2_5M_Emission.png",
+        "normalUnity": "S2_5M_Normal_UnityAG.png",
+        "metallicSmoothness": "S2_5M_Roughness_MetallicSmoothness.png"
+      }
+    },
+    {
+      "name": "S2_5M_Dark_Seam",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "alpha": 1.0,
+      "textures": {
+        "albedo": "S2_5M_Albedo.png",
+        "roughness": "S2_5M_Roughness.png",
+        "metallic": "S2_5M_Metallic.png",
+        "normal": "S2_5M_Normal.png",
+        "ao": "S2_5M_AO.png",
+        "emission": "S2_5M_Emission.png",
+        "normalUnity": "S2_5M_Normal_UnityAG.png",
+        "metallicSmoothness": "S2_5M_Roughness_MetallicSmoothness.png"
+      }
+    },
+    {
+      "name": "S2_5M_Lens_Seat",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "alpha": 1.0,
+      "textures": {
+        "albedo": "S2_5M_Albedo.png",
+        "roughness": "S2_5M_Roughness.png",
+        "metallic": "S2_5M_Metallic.png",
+        "normal": "S2_5M_Normal.png",
+        "ao": "S2_5M_AO.png",
+        "emission": "S2_5M_Emission.png",
+        "normalUnity": "S2_5M_Normal_UnityAG.png",
+        "metallicSmoothness": "S2_5M_Roughness_MetallicSmoothness.png"
+      }
+    },
+    {
+      "name": "S2_5M_L_Green_Glass",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "alpha": 1.0,
+      "textures": {
+        "albedo": "S2_5M_Albedo.png",
+        "roughness": "S2_5M_Roughness.png",
+        "metallic": "S2_5M_Metallic.png",
+        "normal": "S2_5M_Normal.png",
+        "ao": "S2_5M_AO.png",
+        "emission": "S2_5M_Emission.png",
+        "normalUnity": "S2_5M_Normal_UnityAG.png",
+        "metallicSmoothness": "S2_5M_Roughness_MetallicSmoothness.png"
+      }
+    },
+    {
+      "name": "S2_5M_L_Red_Glass",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "alpha": 1.0,
+      "textures": {
+        "albedo": "S2_5M_Albedo.png",
+        "roughness": "S2_5M_Roughness.png",
+        "metallic": "S2_5M_Metallic.png",
+        "normal": "S2_5M_Normal.png",
+        "ao": "S2_5M_AO.png",
+        "emission": "S2_5M_Emission.png",
+        "normalUnity": "S2_5M_Normal_UnityAG.png",
+        "metallicSmoothness": "S2_5M_Roughness_MetallicSmoothness.png"
+      }
+    },
+    {
+      "name": "S2_5M_L_White_Glass",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "alpha": 1.0,
+      "textures": {
+        "albedo": "S2_5M_Albedo.png",
+        "roughness": "S2_5M_Roughness.png",
+        "metallic": "S2_5M_Metallic.png",
+        "normal": "S2_5M_Normal.png",
+        "ao": "S2_5M_AO.png",
+        "emission": "S2_5M_Emission.png",
+        "normalUnity": "S2_5M_Normal_UnityAG.png",
+        "metallicSmoothness": "S2_5M_Roughness_MetallicSmoothness.png"
+      }
+    },
+    {
+      "name": "S2_5M_L_Yellow_Glass",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "alpha": 1.0,
+      "textures": {
+        "albedo": "S2_5M_Albedo.png",
+        "roughness": "S2_5M_Roughness.png",
+        "metallic": "S2_5M_Metallic.png",
+        "normal": "S2_5M_Normal.png",
+        "ao": "S2_5M_AO.png",
+        "emission": "S2_5M_Emission.png",
+        "normalUnity": "S2_5M_Normal_UnityAG.png",
+        "metallicSmoothness": "S2_5M_Roughness_MetallicSmoothness.png"
+      }
+    },
+    {
+      "name": "S2_5M_L_YellowRed_Glass",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "alpha": 1.0,
+      "textures": {
+        "albedo": "S2_5M_Albedo.png",
+        "roughness": "S2_5M_Roughness.png",
+        "metallic": "S2_5M_Metallic.png",
+        "normal": "S2_5M_Normal.png",
+        "ao": "S2_5M_AO.png",
+        "emission": "S2_5M_Emission.png",
+        "normalUnity": "S2_5M_Normal_UnityAG.png",
+        "metallicSmoothness": "S2_5M_Roughness_MetallicSmoothness.png",
+        "emissionRed": "S2_5M_Emission_RedOnly.png",
+        "emissionYellow": "S2_5M_Emission_YellowOnly.png"
+      }
+    },
+    {
+      "name": "S2_5M_R_Green_Glass",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "alpha": 1.0,
+      "textures": {
+        "albedo": "S2_5M_Albedo.png",
+        "roughness": "S2_5M_Roughness.png",
+        "metallic": "S2_5M_Metallic.png",
+        "normal": "S2_5M_Normal.png",
+        "ao": "S2_5M_AO.png",
+        "emission": "S2_5M_Emission.png",
+        "normalUnity": "S2_5M_Normal_UnityAG.png",
+        "metallicSmoothness": "S2_5M_Roughness_MetallicSmoothness.png"
+      }
+    },
+    {
+      "name": "S2_5M_R_Red_Glass",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "alpha": 1.0,
+      "textures": {
+        "albedo": "S2_5M_Albedo.png",
+        "roughness": "S2_5M_Roughness.png",
+        "metallic": "S2_5M_Metallic.png",
+        "normal": "S2_5M_Normal.png",
+        "ao": "S2_5M_AO.png",
+        "emission": "S2_5M_Emission.png",
+        "normalUnity": "S2_5M_Normal_UnityAG.png",
+        "metallicSmoothness": "S2_5M_Roughness_MetallicSmoothness.png"
+      }
+    },
+    {
+      "name": "S2_5M_R_White_Glass",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "alpha": 1.0,
+      "textures": {
+        "albedo": "S2_5M_Albedo.png",
+        "roughness": "S2_5M_Roughness.png",
+        "metallic": "S2_5M_Metallic.png",
+        "normal": "S2_5M_Normal.png",
+        "ao": "S2_5M_AO.png",
+        "emission": "S2_5M_Emission.png",
+        "normalUnity": "S2_5M_Normal_UnityAG.png",
+        "metallicSmoothness": "S2_5M_Roughness_MetallicSmoothness.png"
+      }
+    },
+    {
+      "name": "S2_5M_R_Yellow_Glass",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "alpha": 1.0,
+      "textures": {
+        "albedo": "S2_5M_Albedo.png",
+        "roughness": "S2_5M_Roughness.png",
+        "metallic": "S2_5M_Metallic.png",
+        "normal": "S2_5M_Normal.png",
+        "ao": "S2_5M_AO.png",
+        "emission": "S2_5M_Emission.png",
+        "normalUnity": "S2_5M_Normal_UnityAG.png",
+        "metallicSmoothness": "S2_5M_Roughness_MetallicSmoothness.png"
+      }
+    },
+    {
+      "name": "S2_5M_R_YellowRed_Glass",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "alpha": 1.0,
+      "textures": {
+        "albedo": "S2_5M_Albedo.png",
+        "roughness": "S2_5M_Roughness.png",
+        "metallic": "S2_5M_Metallic.png",
+        "normal": "S2_5M_Normal.png",
+        "ao": "S2_5M_AO.png",
+        "emission": "S2_5M_Emission.png",
+        "normalUnity": "S2_5M_Normal_UnityAG.png",
+        "metallicSmoothness": "S2_5M_Roughness_MetallicSmoothness.png",
+        "emissionRed": "S2_5M_Emission_RedOnly.png",
+        "emissionYellow": "S2_5M_Emission_YellowOnly.png"
+      }
+    },
+    {
+      "name": "S2_5M_Socket_Painted_Gray",
+      "color": [
+        0.94,
+        0.94,
+        0.94,
+        1
+      ],
+      "metallic": 0.08,
+      "roughness": 0.73,
+      "alpha": 1,
+      "textures": {
+        "albedo": "S2_5M_Socket_Albedo.png",
+        "roughness": "S2_5M_Socket_Roughness.png",
+        "metallic": "S2_5M_Socket_Metallic.png",
+        "normal": "S2_5M_Socket_Normal.png",
+        "normalUnity": "S2_5M_Socket_Normal_UnityAG.png",
+        "metallicSmoothness": "S2_5M_Socket_MetallicSmoothness.png"
+      }
+    }
+  ],
+  "objects": [
+    {
+      "name": "S2_5M_Cover_Gussets_Bottom",
+      "vertices": 36,
+      "triangles": 16,
+      "materials": 1
+    },
+    {
+      "name": "S2_5M_Cover_Gussets_Top",
+      "vertices": 36,
+      "triangles": 16,
+      "materials": 1
+    },
+    {
+      "name": "S2_5M_Cover_Lug_Bottom",
+      "vertices": 72,
+      "triangles": 44,
+      "materials": 1
+    },
+    {
+      "name": "S2_5M_Cover_Lug_Top",
+      "vertices": 72,
+      "triangles": 44,
+      "materials": 1
+    },
+    {
+      "name": "S2_5M_Front_Slotted_Screw_Bottom",
+      "vertices": 108,
+      "triangles": 64,
+      "materials": 1
+    },
+    {
+      "name": "S2_5M_Front_Slotted_Screw_Top",
+      "vertices": 108,
+      "triangles": 64,
+      "materials": 1
+    },
+    {
+      "name": "S2_5M_Front_Washer_Bottom",
+      "vertices": 144,
+      "triangles": 128,
+      "materials": 1
+    },
+    {
+      "name": "S2_5M_Front_Washer_Top",
+      "vertices": 144,
+      "triangles": 128,
+      "materials": 1
+    },
+    {
+      "name": "S2_5M_Housing_Continuous",
+      "vertices": 10550,
+      "triangles": 15942,
+      "materials": 4
+    },
+    {
+      "name": "S2_5M_Lens_L_Green",
+      "vertices": 171,
+      "triangles": 188,
+      "materials": 1
+    },
+    {
+      "name": "S2_5M_Lens_L_Red",
+      "vertices": 167,
+      "triangles": 188,
+      "materials": 1
+    },
+    {
+      "name": "S2_5M_Lens_L_White",
+      "vertices": 171,
+      "triangles": 188,
+      "materials": 1
+    },
+    {
+      "name": "S2_5M_Lens_L_Yellow",
+      "vertices": 167,
+      "triangles": 188,
+      "materials": 1
+    },
+    {
+      "name": "S2_5M_Lens_L_YellowRed",
+      "vertices": 171,
+      "triangles": 188,
+      "materials": 1
+    },
+    {
+      "name": "S2_5M_Lens_R_Green",
+      "vertices": 172,
+      "triangles": 188,
+      "materials": 1
+    },
+    {
+      "name": "S2_5M_Lens_R_Red",
+      "vertices": 167,
+      "triangles": 188,
+      "materials": 1
+    },
+    {
+      "name": "S2_5M_Lens_R_White",
+      "vertices": 172,
+      "triangles": 188,
+      "materials": 1
+    },
+    {
+      "name": "S2_5M_Lens_R_Yellow",
+      "vertices": 167,
+      "triangles": 188,
+      "materials": 1
+    },
+    {
+      "name": "S2_5M_Lens_R_YellowRed",
+      "vertices": 167,
+      "triangles": 188,
+      "materials": 1
+    },
+    {
+      "name": "S2_5M_Mounting_Tie_Bottom",
+      "vertices": 54,
+      "triangles": 44,
+      "materials": 1
+    },
+    {
+      "name": "S2_5M_Mounting_Tie_Top",
+      "vertices": 56,
+      "triangles": 44,
+      "materials": 1
+    },
+    {
+      "name": "S2_5M_Rear_Fastener_Bottom",
+      "vertices": 42,
+      "triangles": 32,
+      "materials": 1
+    },
+    {
+      "name": "S2_5M_Rear_Fastener_Top",
+      "vertices": 88,
+      "triangles": 92,
+      "materials": 1
+    },
+    {
+      "name": "S2_5M_Screw_Shank_Bottom",
+      "vertices": 48,
+      "triangles": 28,
+      "materials": 1
+    },
+    {
+      "name": "S2_5M_Screw_Shank_Top",
+      "vertices": 48,
+      "triangles": 28,
+      "materials": 1
+    }
+  ]
+}

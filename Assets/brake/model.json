@@ -1,0 +1,316 @@
+{
+  "format": 1,
+  "source": "Automatic_Brake_Unit.blend",
+  "sourceSHA256": "8a3cbd10d3f072ae8b5d57116a21f31fb23c16929f9252609dd3036be8ba2e73",
+  "sourceBoundsMin": [
+    -0.5,
+    -0.3055555522441864,
+    -0.19655834138393402
+  ],
+  "sourceBoundsMax": [
+    0.5,
+    0.3055555522441864,
+    0.1676977276802063
+  ],
+  "size": [
+    1.0,
+    0.6111111044883728,
+    0.3642560839653015
+  ],
+  "materials": [
+    {
+      "name": "Black_Indicator_and_Button_Bezels",
+      "color": [
+        0.006000000052154064,
+        0.007000000216066837,
+        0.00800000037997961,
+        1.0
+      ],
+      "metallic": 0.11999999731779099,
+      "roughness": 0.33000001311302185,
+      "alpha": 1.0,
+      "textures": {}
+    },
+    {
+      "name": "Red_Translucent_Indicator_Lens",
+      "color": [
+        0.36000001430511475,
+        0.004999999888241291,
+        0.008999999612569809,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.14000000059604645,
+      "alpha": 1.0,
+      "textures": {}
+    },
+    {
+      "name": "Dark_Recessed_Seats",
+      "color": [
+        0.0024999999441206455,
+        0.00279999990016222,
+        0.003000000026077032,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.6200000047683716,
+      "alpha": 1.0,
+      "textures": {}
+    },
+    {
+      "name": "Black_Textured_Housing",
+      "color": [
+        0.94,
+        0.94,
+        0.94,
+        1
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "alpha": 1.0,
+      "textures": {
+        "albedo": "Case_BaseColor.png",
+        "roughness": "Case_Roughness.png",
+        "normal": "Case_Normal.png",
+        "normalUnity": "Case_Normal_UnityAG.png",
+        "metallicSmoothness": "Case_Roughness_MetallicSmoothness.png"
+      }
+    },
+    {
+      "name": "Flat_Printed_Front_Cover",
+      "color": [
+        0.94,
+        0.94,
+        0.94,
+        1
+      ],
+      "metallic": 0.0,
+      "roughness": 0.550000011920929,
+      "alpha": 1.0,
+      "textures": {
+        "albedo": "Panel_BaseColor.png",
+        "normal": "Case_Normal.png.001.png",
+        "normalUnity": "Case_Normal.png.001_UnityAG.png"
+      }
+    },
+    {
+      "name": "Satin_Silver_Screw_Heads",
+      "color": [
+        0.46000000834465027,
+        0.4699999988079071,
+        0.47999998927116394,
+        1.0
+      ],
+      "metallic": 1.0,
+      "roughness": 0.3400000035762787,
+      "alpha": 1.0,
+      "textures": {}
+    },
+    {
+      "name": "Recessed_Steel_Slot_Interior",
+      "color": [
+        0.054999999701976776,
+        0.05700000002980232,
+        0.05900000035762787,
+        1.0
+      ],
+      "metallic": 0.8500000238418579,
+      "roughness": 0.47999998927116394,
+      "alpha": 1.0,
+      "textures": {}
+    },
+    {
+      "name": "Red_Semimatte_Button_Polymer",
+      "color": [
+        0.25999999046325684,
+        0.012000000104308128,
+        0.019999999552965164,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "alpha": 1.0,
+      "textures": {
+        "normal": "Case_Normal.png.002.png",
+        "normalUnity": "Case_Normal.png.002_UnityAG.png"
+      }
+    },
+    {
+      "name": "Green_Translucent_Indicator_Lens",
+      "color": [
+        0.007000000216066837,
+        0.2549999952316284,
+        0.013000000268220901,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.14000000059604645,
+      "alpha": 1.0,
+      "textures": {}
+    }
+  ],
+  "objects": [
+    {
+      "name": "Brake_Red_Black_Bezel",
+      "vertices": 1316,
+      "triangles": 1600,
+      "materials": 1
+    },
+    {
+      "name": "Brake_Red_Convex_Lens",
+      "vertices": 981,
+      "triangles": 1534,
+      "materials": 1
+    },
+    {
+      "name": "Brake_Red_Lens_Seat",
+      "vertices": 328,
+      "triangles": 316,
+      "materials": 1
+    },
+    {
+      "name": "Continuous_Housing_Sleeve",
+      "vertices": 544,
+      "triangles": 624,
+      "materials": 1
+    },
+    {
+      "name": "Front_Cover_With_Printed_Face",
+      "vertices": 2909,
+      "triangles": 3264,
+      "materials": 2
+    },
+    {
+      "name": "Front_Screw_1",
+      "vertices": 1483,
+      "triangles": 1264,
+      "materials": 2
+    },
+    {
+      "name": "Front_Screw_1_Seating_Ring",
+      "vertices": 596,
+      "triangles": 640,
+      "materials": 1
+    },
+    {
+      "name": "Front_Screw_2",
+      "vertices": 1467,
+      "triangles": 1258,
+      "materials": 2
+    },
+    {
+      "name": "Front_Screw_2_Seating_Ring",
+      "vertices": 596,
+      "triangles": 640,
+      "materials": 1
+    },
+    {
+      "name": "Front_Screw_3",
+      "vertices": 1475,
+      "triangles": 1262,
+      "materials": 2
+    },
+    {
+      "name": "Front_Screw_3_Seating_Ring",
+      "vertices": 596,
+      "triangles": 640,
+      "materials": 1
+    },
+    {
+      "name": "Front_Screw_4",
+      "vertices": 1490,
+      "triangles": 1264,
+      "materials": 2
+    },
+    {
+      "name": "Front_Screw_4_Seating_Ring",
+      "vertices": 596,
+      "triangles": 640,
+      "materials": 1
+    },
+    {
+      "name": "Large_Red_Button_Black_Bezel",
+      "vertices": 2048,
+      "triangles": 2240,
+      "materials": 1
+    },
+    {
+      "name": "Large_Red_Button_Cap",
+      "vertices": 1249,
+      "triangles": 2014,
+      "materials": 1
+    },
+    {
+      "name": "Power_Green_Black_Bezel",
+      "vertices": 1316,
+      "triangles": 1600,
+      "materials": 1
+    },
+    {
+      "name": "Power_Green_Convex_Lens",
+      "vertices": 981,
+      "triangles": 1534,
+      "materials": 1
+    },
+    {
+      "name": "Power_Green_Lens_Seat",
+      "vertices": 328,
+      "triangles": 316,
+      "materials": 1
+    },
+    {
+      "name": "Rear_Cover",
+      "vertices": 1632,
+      "triangles": 1964,
+      "materials": 1
+    },
+    {
+      "name": "Rear_Screw_1",
+      "vertices": 1466,
+      "triangles": 1260,
+      "materials": 2
+    },
+    {
+      "name": "Rear_Screw_1_Seating_Ring",
+      "vertices": 596,
+      "triangles": 640,
+      "materials": 1
+    },
+    {
+      "name": "Rear_Screw_2",
+      "vertices": 1491,
+      "triangles": 1266,
+      "materials": 2
+    },
+    {
+      "name": "Rear_Screw_2_Seating_Ring",
+      "vertices": 596,
+      "triangles": 640,
+      "materials": 1
+    },
+    {
+      "name": "Rear_Screw_3",
+      "vertices": 1452,
+      "triangles": 1256,
+      "materials": 2
+    },
+    {
+      "name": "Rear_Screw_3_Seating_Ring",
+      "vertices": 596,
+      "triangles": 640,
+      "materials": 1
+    },
+    {
+      "name": "Rear_Screw_4",
+      "vertices": 1457,
+      "triangles": 1260,
+      "materials": 2
+    },
+    {
+      "name": "Rear_Screw_4_Seating_Ring",
+      "vertices": 596,
+      "triangles": 640,
+      "materials": 1
+    }
+  ]
+}

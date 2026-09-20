@@ -1,0 +1,618 @@
+{
+  "format": 1,
+  "source": "Speed_Limit_Indicator.blend",
+  "sourceSHA256": "ee54d5245d9c7fadf497be9efbd5adb784a596691a5f3291961a833df4d4ac44",
+  "sourceBoundsMin": [
+    -0.5,
+    -0.3970315456390381,
+    -0.10322820395231247
+  ],
+  "sourceBoundsMax": [
+    0.5,
+    0.3970315456390381,
+    0.10322820395231247
+  ],
+  "size": [
+    1.0,
+    0.7940630912780762,
+    0.20645640790462494
+  ],
+  "materials": [
+    {
+      "name": "Inactive_Segment_Elements",
+      "color": [
+        0.06199999898672104,
+        0.04600000008940697,
+        0.04100000113248825,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.6499999761581421,
+      "alpha": 1.0,
+      "textures": {}
+    },
+    {
+      "name": "Display_Internal_Backplate",
+      "color": [
+        0.017999999225139618,
+        0.01600000075995922,
+        0.01899999938905239,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.7200000286102295,
+      "alpha": 1.0,
+      "textures": {}
+    },
+    {
+      "name": "Dark_Display_Frame",
+      "color": [
+        0.026000000536441803,
+        0.026000000536441803,
+        0.02800000086426735,
+        1.0
+      ],
+      "metallic": 0.07999999821186066,
+      "roughness": 0.41999998688697815,
+      "alpha": 1.0,
+      "textures": {}
+    },
+    {
+      "name": "Smoked_Protective_Polymer",
+      "color": [
+        0.7200000286102295,
+        0.699999988079071,
+        0.7200000286102295,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.12999999523162842,
+      "alpha": 0.16,
+      "textures": {}
+    },
+    {
+      "name": "Flat_Black_Printed_Panel",
+      "color": [
+        0.94,
+        0.94,
+        0.94,
+        1
+      ],
+      "metallic": 0.0,
+      "roughness": 0.7200000286102295,
+      "alpha": 1.0,
+      "textures": {
+        "albedo": "Panel_BaseColor.png"
+      }
+    },
+    {
+      "name": "Textured_Charcoal_Case",
+      "color": [
+        0.94,
+        0.94,
+        0.94,
+        1
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5099999904632568,
+      "alpha": 1.0,
+      "textures": {
+        "albedo": "Case_BaseColor.png",
+        "roughness": "Case_Roughness.png",
+        "normal": "Case_Normal.png",
+        "normalUnity": "Case_Normal_UnityAG.png",
+        "metallicSmoothness": "Case_Roughness_MetallicSmoothness.png"
+      }
+    },
+    {
+      "name": "Red_Indicator_Border",
+      "color": [
+        0.10000000149011612,
+        0.006000000052154064,
+        0.012000000104308128,
+        1.0
+      ],
+      "metallic": 0.10000000149011612,
+      "roughness": 0.2800000011920929,
+      "alpha": 1.0,
+      "textures": {}
+    },
+    {
+      "name": "Red_Prism_Facet_00",
+      "color": [
+        0.1550000011920929,
+        0.006000000052154064,
+        0.009499999694526196,
+        1.0
+      ],
+      "metallic": 0.05999999865889549,
+      "roughness": 0.36000001430511475,
+      "alpha": 1.0,
+      "textures": {}
+    },
+    {
+      "name": "Red_Prism_Facet_01",
+      "color": [
+        0.10999999940395355,
+        0.0035000001080334187,
+        0.006500000134110451,
+        1.0
+      ],
+      "metallic": 0.05999999865889549,
+      "roughness": 0.36000001430511475,
+      "alpha": 1.0,
+      "textures": {}
+    },
+    {
+      "name": "Red_Prism_Facet_02",
+      "color": [
+        0.19499999284744263,
+        0.007000000216066837,
+        0.010499999858438969,
+        1.0
+      ],
+      "metallic": 0.05999999865889549,
+      "roughness": 0.36000001430511475,
+      "alpha": 1.0,
+      "textures": {}
+    },
+    {
+      "name": "Red_Prism_Facet_03",
+      "color": [
+        0.12999999523162842,
+        0.004000000189989805,
+        0.007000000216066837,
+        1.0
+      ],
+      "metallic": 0.05999999865889549,
+      "roughness": 0.36000001430511475,
+      "alpha": 1.0,
+      "textures": {}
+    },
+    {
+      "name": "Red_Prism_Facet_04",
+      "color": [
+        0.17000000178813934,
+        0.0044999998062849045,
+        0.00800000037997961,
+        1.0
+      ],
+      "metallic": 0.05999999865889549,
+      "roughness": 0.36000001430511475,
+      "alpha": 1.0,
+      "textures": {}
+    },
+    {
+      "name": "Red_Prism_Facet_05",
+      "color": [
+        0.0949999988079071,
+        0.003000000026077032,
+        0.005499999970197678,
+        1.0
+      ],
+      "metallic": 0.05999999865889549,
+      "roughness": 0.36000001430511475,
+      "alpha": 1.0,
+      "textures": {}
+    },
+    {
+      "name": "Gloss_Black_Front_Rim",
+      "color": [
+        0.007000000216066837,
+        0.007499999832361937,
+        0.009999999776482582,
+        1.0
+      ],
+      "metallic": 0.3499999940395355,
+      "roughness": 0.17000000178813934,
+      "alpha": 1.0,
+      "textures": {}
+    },
+    {
+      "name": "Blackened_Steel_Fasteners",
+      "color": [
+        0.008999999612569809,
+        0.009999999776482582,
+        0.010999999940395355,
+        1.0
+      ],
+      "metallic": 0.6600000262260437,
+      "roughness": 0.3199999928474426,
+      "alpha": 1.0,
+      "textures": {}
+    },
+    {
+      "name": "Blackened_Steel_Socket_Interior",
+      "color": [
+        0.0020000000949949026,
+        0.0020000000949949026,
+        0.0024999999441206455,
+        1.0
+      ],
+      "metallic": 0.07999999821186066,
+      "roughness": 0.6800000071525574,
+      "alpha": 1.0,
+      "textures": {}
+    }
+  ],
+  "objects": [
+    {
+      "name": "Display_Current_Decimal_1",
+      "vertices": 136,
+      "triangles": 124,
+      "materials": 1
+    },
+    {
+      "name": "Display_Current_Decimal_2",
+      "vertices": 136,
+      "triangles": 124,
+      "materials": 1
+    },
+    {
+      "name": "Display_Current_Decimal_3",
+      "vertices": 136,
+      "triangles": 124,
+      "materials": 1
+    },
+    {
+      "name": "Display_Current_Digit_1_Segment_A",
+      "vertices": 142,
+      "triangles": 64,
+      "materials": 1
+    },
+    {
+      "name": "Display_Current_Digit_1_Segment_B",
+      "vertices": 212,
+      "triangles": 96,
+      "materials": 1
+    },
+    {
+      "name": "Display_Current_Digit_1_Segment_C",
+      "vertices": 216,
+      "triangles": 98,
+      "materials": 1
+    },
+    {
+      "name": "Display_Current_Digit_1_Segment_D",
+      "vertices": 142,
+      "triangles": 60,
+      "materials": 1
+    },
+    {
+      "name": "Display_Current_Digit_1_Segment_E",
+      "vertices": 212,
+      "triangles": 96,
+      "materials": 1
+    },
+    {
+      "name": "Display_Current_Digit_1_Segment_F",
+      "vertices": 212,
+      "triangles": 96,
+      "materials": 1
+    },
+    {
+      "name": "Display_Current_Digit_1_Segment_G",
+      "vertices": 144,
+      "triangles": 64,
+      "materials": 1
+    },
+    {
+      "name": "Display_Current_Digit_2_Segment_A",
+      "vertices": 156,
+      "triangles": 66,
+      "materials": 1
+    },
+    {
+      "name": "Display_Current_Digit_2_Segment_B",
+      "vertices": 212,
+      "triangles": 96,
+      "materials": 1
+    },
+    {
+      "name": "Display_Current_Digit_2_Segment_C",
+      "vertices": 216,
+      "triangles": 98,
+      "materials": 1
+    },
+    {
+      "name": "Display_Current_Digit_2_Segment_D",
+      "vertices": 142,
+      "triangles": 62,
+      "materials": 1
+    },
+    {
+      "name": "Display_Current_Digit_2_Segment_E",
+      "vertices": 212,
+      "triangles": 96,
+      "materials": 1
+    },
+    {
+      "name": "Display_Current_Digit_2_Segment_F",
+      "vertices": 216,
+      "triangles": 98,
+      "materials": 1
+    },
+    {
+      "name": "Display_Current_Digit_2_Segment_G",
+      "vertices": 142,
+      "triangles": 62,
+      "materials": 1
+    },
+    {
+      "name": "Display_Current_Digit_3_Segment_A",
+      "vertices": 148,
+      "triangles": 66,
+      "materials": 1
+    },
+    {
+      "name": "Display_Current_Digit_3_Segment_B",
+      "vertices": 212,
+      "triangles": 96,
+      "materials": 1
+    },
+    {
+      "name": "Display_Current_Digit_3_Segment_C",
+      "vertices": 216,
+      "triangles": 98,
+      "materials": 1
+    },
+    {
+      "name": "Display_Current_Digit_3_Segment_D",
+      "vertices": 150,
+      "triangles": 66,
+      "materials": 1
+    },
+    {
+      "name": "Display_Current_Digit_3_Segment_E",
+      "vertices": 216,
+      "triangles": 98,
+      "materials": 1
+    },
+    {
+      "name": "Display_Current_Digit_3_Segment_F",
+      "vertices": 212,
+      "triangles": 96,
+      "materials": 1
+    },
+    {
+      "name": "Display_Current_Digit_3_Segment_G",
+      "vertices": 148,
+      "triangles": 64,
+      "materials": 1
+    },
+    {
+      "name": "Display_Current_Internal_Board",
+      "vertices": 264,
+      "triangles": 172,
+      "materials": 1
+    },
+    {
+      "name": "Display_Current_Physical_Frame",
+      "vertices": 456,
+      "triangles": 440,
+      "materials": 1
+    },
+    {
+      "name": "Display_Current_Protective_Lens",
+      "vertices": 264,
+      "triangles": 172,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Decimal_1",
+      "vertices": 136,
+      "triangles": 124,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Decimal_2",
+      "vertices": 136,
+      "triangles": 124,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Decimal_3",
+      "vertices": 136,
+      "triangles": 124,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Digit_1_Segment_A",
+      "vertices": 148,
+      "triangles": 60,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Digit_1_Segment_B",
+      "vertices": 220,
+      "triangles": 100,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Digit_1_Segment_C",
+      "vertices": 216,
+      "triangles": 98,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Digit_1_Segment_D",
+      "vertices": 142,
+      "triangles": 60,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Digit_1_Segment_E",
+      "vertices": 212,
+      "triangles": 96,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Digit_1_Segment_F",
+      "vertices": 216,
+      "triangles": 98,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Digit_1_Segment_G",
+      "vertices": 144,
+      "triangles": 64,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Digit_2_Segment_A",
+      "vertices": 150,
+      "triangles": 62,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Digit_2_Segment_B",
+      "vertices": 220,
+      "triangles": 100,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Digit_2_Segment_C",
+      "vertices": 212,
+      "triangles": 96,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Digit_2_Segment_D",
+      "vertices": 142,
+      "triangles": 62,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Digit_2_Segment_E",
+      "vertices": 212,
+      "triangles": 96,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Digit_2_Segment_F",
+      "vertices": 220,
+      "triangles": 100,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Digit_2_Segment_G",
+      "vertices": 150,
+      "triangles": 66,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Digit_3_Segment_A",
+      "vertices": 138,
+      "triangles": 60,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Digit_3_Segment_B",
+      "vertices": 220,
+      "triangles": 100,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Digit_3_Segment_C",
+      "vertices": 212,
+      "triangles": 96,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Digit_3_Segment_D",
+      "vertices": 142,
+      "triangles": 60,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Digit_3_Segment_E",
+      "vertices": 212,
+      "triangles": 96,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Digit_3_Segment_F",
+      "vertices": 220,
+      "triangles": 100,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Digit_3_Segment_G",
+      "vertices": 142,
+      "triangles": 64,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Internal_Board",
+      "vertices": 264,
+      "triangles": 172,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Physical_Frame",
+      "vertices": 456,
+      "triangles": 440,
+      "materials": 1
+    },
+    {
+      "name": "Display_Next_Protective_Lens",
+      "vertices": 264,
+      "triangles": 172,
+      "materials": 1
+    },
+    {
+      "name": "Printed_Front_Panel",
+      "vertices": 674,
+      "triangles": 548,
+      "materials": 1
+    },
+    {
+      "name": "Rear_Case_Shell",
+      "vertices": 2694,
+      "triangles": 2942,
+      "materials": 1
+    },
+    {
+      "name": "Red_Indicator_Recessed_Border",
+      "vertices": 336,
+      "triangles": 168,
+      "materials": 1
+    },
+    {
+      "name": "Red_Prismatic_Indicator_Lens",
+      "vertices": 105,
+      "triangles": 50,
+      "materials": 6
+    },
+    {
+      "name": "Rounded_Front_Bezel",
+      "vertices": 688,
+      "triangles": 880,
+      "materials": 1
+    },
+    {
+      "name": "Side_Screw_Left_1",
+      "vertices": 340,
+      "triangles": 404,
+      "materials": 2
+    },
+    {
+      "name": "Side_Screw_Left_2",
+      "vertices": 340,
+      "triangles": 404,
+      "materials": 2
+    },
+    {
+      "name": "Side_Screw_Right_1",
+      "vertices": 340,
+      "triangles": 404,
+      "materials": 2
+    },
+    {
+      "name": "Side_Screw_Right_2",
+      "vertices": 340,
+      "triangles": 404,
+      "materials": 2
+    }
+  ]
+}

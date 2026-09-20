@@ -1,0 +1,4 @@
+using System.Reflection;
+[assembly: AssemblyVersion("1.0.13.0")]
+[assembly: AssemblyFileVersion("1.0.13.0")]
+[assembly: AssemblyInformationalVersion("1.0.13+localization-pricing.1")]
