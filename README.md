@@ -6,9 +6,11 @@ Railway Safety Gadgets adds three functional cab devices to Derail Valley: a Loc
 
 The devices can be purchased from regular shops and mounted inside a locomotive cab. Used together, they provide signal indications, route speed limit information, and automatic braking.
 
+### Support
+
 Enjoy my Derail Valley mods? You can support my work on Ko-fi!
 
-[Support me on Ko-fi](https://ko-fi.com/7vlad7)
+[**Support me on Ko-fi**](https://ko-fi.com/7vlad7)
 
 ## Installation
 
@@ -29,6 +31,7 @@ Enjoy my Derail Valley mods? You can support my work on Ko-fi!
 The images below are the project's existing inventory renders. Printed legends are part of the original models.
 
 ### Locomotive Signal Repeater
+<img width="384" height="384" alt="image" src="https://github.com/user-attachments/assets/18cd1ef1-c989-404e-b55d-1996f4f3712e" />
 
 Displays cab signal indications using DV Signals block conditions and the selected route.
 
@@ -40,6 +43,7 @@ Displays cab signal indications using DV Signals block conditions and the select
 A permitted RED + FLASHING YELLOW indication does not itself trigger braking. Confirmed RED from an occupied current block still takes priority over a reservation.
 
 ### Speed Limiter
+<img width="384" height="384" alt="image" src="https://github.com/user-attachments/assets/c5aaf37b-aa83-4e6d-b9bd-08a59e44c948" />
 
 Displays the next speed limit at the top and the current limit at the bottom, in km/h. These are route limits, not a display of the locomotive's actual speed.
 
@@ -50,6 +54,7 @@ Displays the next speed limit at the top and the current limit at the bottom, in
 - Supplies the CURRENT limit for the Automatic Brake Unit's optional speed supervision.
 
 ### Automatic Brake Unit
+<img width="384" height="384" alt="image" src="https://github.com/user-attachments/assets/a07f6b29-132c-4716-b6a0-e7be2125269a" />
 
 Applies the native train brake in response to cab RED or sustained overspeed, when the corresponding operational gadgets are fitted to the same locomotive.
 
@@ -77,9 +82,11 @@ Railway Safety Gadgets добавляет в Derail Valley три функцио
 
 Устройства можно приобрести в обычных магазинах и установить в кабине локомотива. При совместном использовании они отображают показания локомотивной сигнализации и маршрутные ограничения скорости, а также обеспечивают автоматическое торможение.
 
+### Поддержка
+
 Нравятся мои моды для Derail Valley? Вы можете поддержать мою работу на Ko-fi!
 
-[Поддержать меня на Ko-fi](https://ko-fi.com/7vlad7)
+[**Поддержать меня на Ko-fi**](https://ko-fi.com/7vlad7)
 
 ## Установка
 
@@ -100,6 +107,7 @@ Railway Safety Gadgets добавляет в Derail Valley три функцио
 Ниже представлены исходные изображения устройств из инвентаря проекта. Надписи на моделях являются частью оригинального оформления.
 
 ### Locomotive Signal Repeater — Повторитель локомотивной сигнализации
+<img width="384" height="384" alt="image" src="https://github.com/user-attachments/assets/bd9cc541-335a-474d-b25e-be9617f4d402" />
 
 Отображает показания локомотивной сигнализации на основе условий блоков DV Signals и выбранного маршрута.
 
@@ -111,6 +119,7 @@ Railway Safety Gadgets добавляет в Derail Valley три функцио
 Разрешающее показание RED + FLASHING YELLOW само по себе не вызывает торможения. Подтверждённый RED от занятого текущего блока по-прежнему имеет приоритет над резервированием маршрута.
 
 ### Speed Limiter — Ограничитель скорости
+<img width="384" height="384" alt="image" src="https://github.com/user-attachments/assets/c5a2c04b-6712-4704-88c3-e7c375d0c6f9" />
 
 Отображает следующее ограничение скорости сверху, а текущее — снизу. Значения указаны в км/ч. Это ограничения скорости на маршруте, а не фактическая скорость локомотива.
 
@@ -121,6 +130,7 @@ Railway Safety Gadgets добавляет в Derail Valley три функцио
 - Передаёт значение CURRENT (текущее ограничение) в систему контроля скорости блока автоматического торможения, если она включена.
 
 ### Automatic Brake Unit — Блок автоматического торможения
+<img width="384" height="384" alt="image" src="https://github.com/user-attachments/assets/39d7befe-6b72-4128-92e1-bb8ad2e37924" />
 
 Задействует штатный поездной тормоз при красном показании локомотивной сигнализации (RED) или длительном превышении скорости, если соответствующие устройства установлены на том же локомотиве.
 
