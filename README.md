@@ -34,8 +34,7 @@ Enjoy my Derail Valley mods? You can support my work on Ko-fi!
 The images below are the project's existing inventory renders. Printed legends are part of the original models.
 
 ### Locomotive Signal Repeater
-<img width="384" height="384" alt="image" src="https://github.com/user-attachments/assets/18cd1ef1-c989-404e-b55d-1996f4f3712e" />
-
+<img width="384" height="384" alt="icon" src="https://github.com/user-attachments/assets/e8216232-a6be-4efb-b223-14c4c606a1ed" />
 Displays the cab indication supplied by the active signal provider and the selected route.
 
 - GREEN, YELLOW, YELLOW-RED, RED, GREEN-YELLOW and WHITE indications, plus confirmed flashing combinations where the native aspect supports them. Both physical faces show the same state.
@@ -48,8 +47,6 @@ RED shown ahead of a signal does not by itself apply the train brake. Protection
 
 ### Speed Limiter
 <img width="384" height="384" alt="icon" src="https://github.com/user-attachments/assets/14694dbb-c565-4a5d-89d5-3eef6257c254" />
-
-
 Displays the next whole-train speed restriction above, the distance to that same target on the middle display, and the current permitted speed below. These are route limits, not the locomotive's actual speed.
 
 - Follows the confirmed reverser direction and selected branch, including reverse movement, rollback and direction changes after a stop.
@@ -60,8 +57,7 @@ Displays the next whole-train speed restriction above, the distance to that same
 - A lower upcoming restriction produces one warning and the existing red reduction arrow. Equal or higher limits do not create a false reduction warning.
 
 ### Automatic Brake Unit
-<img width="384" height="384" alt="image" src="https://github.com/user-attachments/assets/a07f6b29-132c-4716-b6a0-e7be2125269a" />
-
+<img width="384" height="384" alt="icon" src="https://github.com/user-attachments/assets/53674d6e-1deb-49ae-a477-66092bc20ff7" />
 Applies the native train-brake lock when the corresponding protection cause is confirmed on the same locomotive.
 
 - A button or lever switch wired to the unit controls its power. The native rotary switch selects combined protection from cab-signal passage and the Speed Limiter, or cab-signal protection only. Switching modes removes only the speed cause; an active signal cause remains latched.
@@ -120,8 +116,7 @@ Railway Safety Gadgets добавляет в Derail Valley три функцио
 Ниже представлены исходные изображения устройств из инвентаря проекта. Надписи на моделях являются частью оригинального оформления.
 
 ### Locomotive Signal Repeater — Повторитель локомотивной сигнализации
-<img width="384" height="384" alt="image" src="https://github.com/user-attachments/assets/bd9cc541-335a-474d-b25e-be9617f4d402" />
-
+<img width="384" height="384" alt="icon" src="https://github.com/user-attachments/assets/2f82a368-528c-4f95-ad6e-5055e0bee806" />
 Отображает показание кабины, полученное от активного источника сигналов для выбранного маршрута.
 
 - Показания «ЗЕЛЁНЫЙ», «ЖЁЛТЫЙ», «ЖЁЛТО-КРАСНЫЙ», «КРАСНЫЙ», «ЗЕЛЁНО-ЖЁЛТЫЙ» и «БЕЛЫЙ», а также подтверждённые мигающие комбинации, если их поддерживает штатный аспект. Обе стороны устройства показывают одно состояние.
@@ -134,8 +129,6 @@ Railway Safety Gadgets добавляет в Derail Valley три функцио
 
 ### Speed Limiter — Ограничитель скорости
 <img width="384" height="384" alt="icon" src="https://github.com/user-attachments/assets/5c469cbb-38f3-4db7-a805-1710a0cc367b" />
-
-
 Сверху показывает следующее ограничение всего состава, на среднем дисплее — расстояние до той же цели, а снизу — текущую допустимую скорость. Это маршрутные ограничения, а не фактическая скорость локомотива.
 
 - Учитывает подтверждённое направление реверса и выбранную ветвь маршрута, включая движение назад, откат и смену направления после остановки.
@@ -146,8 +139,7 @@ Railway Safety Gadgets добавляет в Derail Valley три функцио
 - При следующем снижении ограничения один раз включаются предупреждение и существующая красная стрелка. Равное или более высокое ограничение не создаёт ложного предупреждения.
 
 ### Automatic Brake Unit — Блок автоматического торможения
-<img width="384" height="384" alt="image" src="https://github.com/user-attachments/assets/39d7befe-6b72-4128-92e1-bb8ad2e37924" />
-
+<img width="384" height="384" alt="icon" src="https://github.com/user-attachments/assets/692b49f2-ac29-492f-a0b4-5cd175342633" />
 Включает штатную блокировку поездного тормоза после подтверждения соответствующей причины на том же локомотиве.
 
 - Внешняя кнопка или рычажный переключатель, подключённые к блоку, управляют его питанием. Поворотный переключатель выбирает совместную защиту по пересечению запрещающего сигнала и по ограничителю скорости либо только защиту по сигналу. Смена режима снимает только причину по скорости; активная причина по сигналу сохраняется.
