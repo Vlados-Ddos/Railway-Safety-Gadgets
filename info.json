@@ -2,17 +2,15 @@
   "Id": "RailwaySafetyGadgets",
   "DisplayName": "Railway Safety Gadgets",
   "Author": "7Vlad7",
-  "Version": "1.0.0",
+  "Version": "1.1.0",
   "ManagerVersion": "0.27.3",
   "AssemblyName": "RailwaySafetyGadgets.dll",
   "EntryMethod": "RailwaySafetyGadgets.Main.Load",
   "Requirements": [
-    "custom_item_mod",
-    "DVSignals"
+    "custom_item_mod"
   ],
   "LoadAfter": [
     "custom_item_mod",
-    "DVSignals",
     "DoubleTrack",
     "ShopRework",
     "CareerRework"
