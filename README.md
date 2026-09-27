@@ -59,7 +59,7 @@ Displays the next whole-train speed restriction above, the distance to that same
 - A lower upcoming restriction produces one warning and the existing red reduction arrow. Equal or higher limits do not create a false reduction warning.
 
 ### Automatic Brake Unit
-<img width="384" height="384" alt="icon" src="https://github.com/user-attachments/assets/53674d6e-1deb-49ae-a477-66092bc20ff7" />
+<img width="599" height="484" alt="brake" src="https://github.com/user-attachments/assets/3915e6db-7852-4b8f-af1f-5e84758ab0f3" />
 
 Applies the native train-brake lock when the corresponding protection cause is confirmed on the same locomotive.
 
@@ -144,7 +144,7 @@ Railway Safety Gadgets добавляет в Derail Valley три функцио
 - При следующем снижении ограничения один раз включаются предупреждение и существующая красная стрелка. Равное или более высокое ограничение не создаёт ложного предупреждения.
 
 ### Automatic Brake Unit — Блок автоматического торможения
-<img width="384" height="384" alt="icon" src="https://github.com/user-attachments/assets/692b49f2-ac29-492f-a0b4-5cd175342633" />
+<img width="599" height="484" alt="brake" src="https://github.com/user-attachments/assets/09307a7c-2d7a-4541-a2f9-e477633de87b" />
 
 Включает штатную блокировку поездного тормоза после подтверждения соответствующей причины на том же локомотиве.
 
