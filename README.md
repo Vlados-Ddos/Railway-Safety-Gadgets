@@ -19,12 +19,15 @@ Enjoy my Derail Valley mods? You can support my work on Ko-fi!
 
 ## Main Features
 
-- Three purchasable gadgets with physical controls, individual icons, and cab mounting.
-- Route and signal readings that follow the direction of travel and the selected switch route.
-- Cab signal indications and current and upcoming speed limits integrated with the Automatic Brake Unit.
-- Native mounting, electrical connection, power, audio, and saved gadget state.
-- Russian and English localization, with automatic language selection.
-- Settings for shunting signals, speed supervision, and warning volume.
+- Three purchasable cab gadgets with physical controls, individual icons, native mounting, wiring, power and saved state.
+- Route, signal and speed readings follow the confirmed direction selected by the locomotive reverser and the selected switch route, including reverse movement and long consists.
+- The Locomotive Signal Repeater, Speed Limiter and Automatic Brake Unit share the same current route data, while signal protection and speed protection remain separate causes.
+- DV Signals is optional. When it is available, the signal repeater uses its real aspects, reservations and block state; without it, ALS shows WHITE and does not create signal braking. Speed limits, Brake Curve Control, overspeed protection and the other gadgets continue to work.
+- Whole-train speed supervision accounts for the relevant end of the consist: a reduction applies when the head enters the slower zone, while an increase applies after the tail clears it.
+- The permitted-speed display uses a fixed 1 km/h step. The distance display is separate and uses speed-dependent metre bands, with hysteresis, dashes for unknown data and HI for values beyond four digits.
+- Physical reset buttons, assigned keys, native switches and alternating controllers use the same interaction paths as the game; keyboard reset follows the game's keyboard-control and reach permissions.
+- Russian and English localization is selected automatically, including separate panel textures and gadget descriptions. Each device has its own warning volume and brightness control.
+- Native shop, save, retrieval and disposal behavior is preserved. Removing a purchased gadget and leaving it in the native dumpster returns stock only after the normal game disposal process; it does not refund money.
 
 ## Gadgets
 
@@ -33,37 +36,43 @@ The images below are the project's existing inventory renders. Printed legends a
 ### Locomotive Signal Repeater
 <img width="384" height="384" alt="image" src="https://github.com/user-attachments/assets/18cd1ef1-c989-404e-b55d-1996f4f3712e" />
 
-Displays cab signal indications using DV Signals block conditions and the selected route.
+Displays the cab indication supplied by the active signal provider and the selected route.
 
-- GREEN, YELLOW, YELLOW-RED, RED, and WHITE indications.
-- Additional confirmed indications: RED + FLASHING YELLOW and GREEN + FLASHING YELLOW. Both physical faces display the same state.
-- Forward/reverse route selection, own-consist exclusion, and optional shunting signals.
-- WHITE indicates unavailable cab signal information; power loss extinguishes the lamps.
+- GREEN, YELLOW, YELLOW-RED, RED, GREEN-YELLOW and WHITE indications, plus confirmed flashing combinations where the native aspect supports them. Both physical faces show the same state.
+- A button or lever switch wired to the repeater controls its power. The two-position rotary switch selects normal or shunting mode. The alternating controller sets brightness from 0% to 100%; it does not change the signal mode. Old semaphore signals can be included from the mod setting and are disabled by default.
+- The confirmed reverser direction is kept through rollback and handle changes while moving; a new direction is accepted only after the train has stopped and departed that way.
+- The device ignores the player's own consist when checking occupied blocks. Reservations and restricted entry are read from the selected route and do not turn a simple red lamp into a false permission.
+- WHITE means that no reliable cab-signal data is available. It is non-protective when DV Signals is absent or unavailable, and power loss extinguishes the lamps.
 
-A permitted RED + FLASHING YELLOW indication does not itself trigger braking. Confirmed RED from an occupied current block still takes priority over a reservation.
+RED shown ahead of a signal does not by itself apply the train brake. Protection requires the measured locomotive-end crossing of a prohibited signal in the confirmed direction. A permitted YELLOW-RED entry remains distinct from a prohibited RED.
 
 ### Speed Limiter
 <img width="384" height="384" alt="image" src="https://github.com/user-attachments/assets/c5aaf37b-aa83-4e6d-b9bd-08a59e44c948" />
 
-Displays the next speed limit at the top and the current limit at the bottom, in km/h. These are route limits, not a display of the locomotive's actual speed.
+Displays the next whole-train speed restriction above, the distance to that same target on the middle display, and the current permitted speed below. These are route limits, not the locomotive's actual speed.
 
-- Follows travel direction and the selected branch, including reverse movement.
-- Uses native speed profiles, or Double Track's provider when active.
-- Can determine limits without visible signs; unknown limits appear as dashes.
-- An arrow and sound warn when the next limit is lower.
-- Supplies the CURRENT limit for the Automatic Brake Unit's optional speed supervision.
+- Follows the confirmed reverser direction and selected branch, including reverse movement, rollback and direction changes after a stop.
+- Uses native speed profiles and the active Double Track provider when available. It can determine limits without visible signs; unknown values appear as dashes.
+- A lower restriction is paired with the train-head entry point. A higher restriction is paired with the last-carriage clearance point, so long consists remain protected until the whole train is clear.
+- A button or lever switch wired to the limiter controls its power. The rotary switch selects normal whole-train supervision or Brake Curve Control. The alternating controller sets brightness from 0% to 100%; at 0% the limiter is inactive. The curve uses precise Brake Curve Control data, current speed, target distance, gradient and train length; only the displayed numbers are rounded.
+- The permitted-speed row is always displayed in 1 km/h steps. The distance readout uses 1/5/10/50/100 m floor bands according to train speed and does not change braking calculations.
+- A lower upcoming restriction produces one warning and the existing red reduction arrow. Equal or higher limits do not create a false reduction warning.
 
 ### Automatic Brake Unit
 <img width="384" height="384" alt="image" src="https://github.com/user-attachments/assets/a07f6b29-132c-4716-b6a0-e7be2125269a" />
 
-Applies the native train brake in response to cab RED or sustained overspeed, when the corresponding operational gadgets are fitted to the same locomotive.
+Applies the native train-brake lock when the corresponding protection cause is confirmed on the same locomotive.
 
-- Cab RED applies full braking immediately, without a ten-second warning.
-- Speed strictly above CURRENT starts a 10-second audible warning and flashing red lamp.
-- Returning to the permitted speed cancels the warning; continued overspeed applies full braking and a steady red lamp. Equality is not overspeed; NEXT is not enforced.
-- The red button silences the alarm and unlocks the brake; release it with the native handle.
-- An acknowledged continuous RED does not retrigger; a later new RED can trigger again.
-- Speed supervision can be disabled independently of cab RED protection.
+- A button or lever switch wired to the unit controls its power. The native rotary switch selects combined protection from cab-signal passage and the Speed Limiter, or cab-signal protection only. Switching modes removes only the speed cause; an active signal cause remains latched.
+- A measured prohibited RED crossing applies full braking immediately. Approaching a RED, stopping on its plane, rolling back or changing the aspect without crossing does not create a false intervention.
+- Speed above the exact permitted value starts a 10-second audible warning and flashing red lamp. Critical excess can apply braking immediately; continued ordinary excess applies braking after the warning. Equality is safe, and the NEXT restriction is not enforced as the current limit.
+- If the driver is already applying effective train or dynamic braking, the warning may receive a short, verified extension; critical excess does not wait.
+- The red button and its assigned key call the physical button action, including the native press animation and sound. The button acknowledges the incident and unlocks the brake; the driver releases the train brake with the native handle.
+- The built-in red button and its assigned key acknowledge the brake incident, silence its alarm and unlock the brake; they do not release the native train-brake handle. The alternating controller sets brightness from 0% to 100%; at 0% it prevents new protection interventions and extinguishes the lamps while an existing brake hold remains. Signal-passage and speed-excess causes are saved independently. Acknowledging one cause does not clear the other, and a persistent speed excess can warn again after recovery.
+
+### Controls, mounting and saved items
+
+- Buttons and lever switches control device power through native wiring. The alternating controller sets 0/25/50/75/100% brightness.
 
 ## Compatibility
 
@@ -95,12 +104,15 @@ Railway Safety Gadgets добавляет в Derail Valley три функцио
 
 ## Основные возможности
 
-- Три доступных для покупки устройства с физическими органами управления, собственными значками и возможностью установки в кабине.
-- Показания маршрута и сигналов учитывают направление движения и выбранный маршрут на стрелочном переводе.
-- Показания локомотивной сигнализации и текущие/предстоящие ограничения скорости интегрированы с блоком автоматического торможения.
-- Штатные крепления и электрические соединения, питание, звуковые эффекты и сохранение состояния устройств.
-- Локализация на русском и английском языках с автоматическим выбором языка.
-- Настройки маневровых сигналов, контроля скорости и громкости предупреждений.
+- Три доступных для покупки устройства кабины с физическими органами управления, собственными значками, штатной установкой, подключением, питанием и сохранением состояния.
+- Показания маршрута, сигналов и ограничений скорости используют подтверждённое направление выбранного реверса и выбранную стрелочную ветвь, в том числе при движении назад и с длинным составом.
+- Повторитель локомотивной сигнализации, ограничитель скорости и блок автоматического торможения используют одни и те же данные текущего маршрута, но причины торможения по сигналу и по скорости остаются независимыми.
+- DV Signals является необязательным. При наличии мода повторитель использует реальные аспекты, резервирование и состояние блоков; без него АЛС показывает БЕЛЫЙ и не вызывает торможение по сигналу. Ограничитель скорости, система тормозной кривой, защита от превышения и остальные устройства продолжают работать.
+- Ограничения рассчитываются для всего состава: при снижении применяется момент входа головы в более медленную зону, а при повышении — момент выхода последнего вагона из неё.
+- Допустимая скорость отображается с фиксированным шагом 1 км/ч. Расстояние выводится отдельно, с динамическими шагами в метрах, гистерезисом, прочерком при неизвестных данных и HI при переполнении четырёх цифр.
+- Физические кнопки, назначенные клавиши, штатные переключатели и чередующийся переключатель используют те же пути взаимодействия, что и игра; клавиатурный сброс подчиняется настройкам управления и проверки доступности игры.
+- Русская и английская локализация выбираются автоматически, включая отдельные текстуры панелей и описания устройств. Для каждого устройства доступны отдельные громкость предупреждений и управление яркостью.
+- Штатные покупка, сохранение, возврат и утилизация сохранены. После снятия купленного устройства его помещение в штатный контейнер возвращает единицу товара только после обычной процедуры игры; деньги не возвращаются.
 
 ## Устройства
 
@@ -109,37 +121,43 @@ Railway Safety Gadgets добавляет в Derail Valley три функцио
 ### Locomotive Signal Repeater — Повторитель локомотивной сигнализации
 <img width="384" height="384" alt="image" src="https://github.com/user-attachments/assets/bd9cc541-335a-474d-b25e-be9617f4d402" />
 
-Отображает показания локомотивной сигнализации на основе условий блоков DV Signals и выбранного маршрута.
+Отображает показание кабины, полученное от активного источника сигналов для выбранного маршрута.
 
-- Показания GREEN (зелёный), YELLOW (жёлтый), YELLOW-RED (жёлтый-красный), RED (красный) и WHITE (белый).
-- Дополнительные подтверждённые показания: RED + FLASHING YELLOW (красный + мигающий жёлтый) и GREEN + FLASHING YELLOW (зелёный + мигающий жёлтый). Обе стороны устройства отображают одно и то же показание.
-- Выбор маршрута при движении вперёд и назад, исключение собственного поезда из проверки и возможность отображения маневровых сигналов.
-- WHITE означает, что информация о показании для кабины недоступна; при отключении питания лампы гаснут.
+- Показания «ЗЕЛЁНЫЙ», «ЖЁЛТЫЙ», «ЖЁЛТО-КРАСНЫЙ», «КРАСНЫЙ», «ЗЕЛЁНО-ЖЁЛТЫЙ» и «БЕЛЫЙ», а также подтверждённые мигающие комбинации, если их поддерживает штатный аспект. Обе стороны устройства показывают одно состояние.
+- Внешняя кнопка или рычажный переключатель, подключённые к повторителю, управляют его питанием. Двухпозиционный поворотный переключатель выбирает нормальный или маневровый режим. Чередующийся переключатель задаёт яркость от 0% до 100% и не меняет режим сигнализации. Учёт старых семафоров включается настройкой мода и по умолчанию выключен.
+- Подтверждённое направление реверса сохраняется при откате и изменении рукоятки во время движения; новое направление принимается только после остановки и начала движения в эту сторону.
+- Собственный состав исключается из проверки занятости блоков. Резервирование и ограниченный въезд читаются по выбранному маршруту и не превращают один красный огонь в ложное разрешение.
+- Показание «БЕЛЫЙ» означает отсутствие надёжных данных о показании. При отсутствии или недоступности DV Signals оно не является защитным состоянием, а при отключении питания лампы гаснут.
 
-Разрешающее показание RED + FLASHING YELLOW само по себе не вызывает торможения. Подтверждённый RED от занятого текущего блока по-прежнему имеет приоритет над резервированием маршрута.
+Показание «КРАСНЫЙ», отображаемое перед светофором, само по себе не включает тормоз. Защита требует фактического пересечения запрещающего сигнала концом локомотива в подтверждённом направлении. Разрешающий вход «ЖЁЛТО-КРАСНЫЙ» остаётся отдельным от запрещающего показания «КРАСНЫЙ».
 
 ### Speed Limiter — Ограничитель скорости
-<img width="384" height="384" alt="image" src="https://github.com/user-attachments/assets/c5a2c04b-6712-4704-88c3-e7c375d0c6f9" />
+<img width="384" height="384" alt="image" src="https://github.com/user-attachments/assets/c5aaf37b-6712-4704-88c3-e7c375d0c6f9" />
 
-Отображает следующее ограничение скорости сверху, а текущее — снизу. Значения указаны в км/ч. Это ограничения скорости на маршруте, а не фактическая скорость локомотива.
+Сверху показывает следующее ограничение всего состава, на среднем дисплее — расстояние до той же цели, а снизу — текущую допустимую скорость. Это маршрутные ограничения, а не фактическая скорость локомотива.
 
-- Учитывает направление движения и выбранную ветвь маршрута, в том числе при движении задним ходом.
-- Использует штатные профили скорости или данные Double Track, если этот мод активен.
-- Может определять ограничения даже при отсутствии видимых знаков; неизвестные значения отображаются прочерками.
-- Стрелка и звуковой сигнал предупреждают о снижении следующего ограничения скорости.
-- Передаёт значение CURRENT (текущее ограничение) в систему контроля скорости блока автоматического торможения, если она включена.
+- Учитывает подтверждённое направление реверса и выбранную ветвь маршрута, включая движение назад, откат и смену направления после остановки.
+- Использует штатные профили скорости и активный источник Double Track, если он доступен. Ограничение может определяться без видимого знака; неизвестные данные показываются прочерком.
+- Для понижения учитывается вход головы состава в медленную зону. Для повышения учитывается выход последнего вагона, поэтому длинный состав не освобождается раньше времени.
+- Внешняя кнопка или рычажный переключатель, подключённые к ограничителю, управляют его питанием. Поворотный переключатель выбирает обычный режим или Brake Curve Control. Чередующийся переключатель задаёт яркость от 0% до 100%; при 0% ограничитель не работает. Кривая использует точные данные Brake Curve Control, скорость, расстояние до цели, уклон и длину состава; округляются только цифры на дисплее.
+- Нижняя строка допустимой скорости всегда использует шаг 1 км/ч. Расстояние округляется вниз отдельными шагами 1/5/10/50/100 м в зависимости от скорости и не влияет на тормозной расчёт.
+- При следующем снижении ограничения один раз включаются предупреждение и существующая красная стрелка. Равное или более высокое ограничение не создаёт ложного предупреждения.
 
 ### Automatic Brake Unit — Блок автоматического торможения
 <img width="384" height="384" alt="image" src="https://github.com/user-attachments/assets/39d7befe-6b72-4128-92e1-bb8ad2e37924" />
 
-Задействует штатный поездной тормоз при красном показании локомотивной сигнализации (RED) или длительном превышении скорости, если соответствующие устройства установлены на том же локомотиве.
+Включает штатную блокировку поездного тормоза после подтверждения соответствующей причины на том же локомотиве.
 
-- Показание RED в кабине немедленно включает полное торможение — без десятисекундного предупреждения.
-- Если скорость строго выше CURRENT (текущего ограничения), запускается 10-секундное звуковое предупреждение и начинает мигать красная лампа.
-- Возврат к разрешённой скорости отменяет предупреждение. Если превышение продолжается, включается полное торможение, а красная лампа горит постоянно. Скорость, равная ограничению, не считается превышением; NEXT (следующее ограничение) не контролируется.
-- Красная кнопка отключает звуковой сигнал и разблокирует тормоз; для растормаживания используйте штатную рукоятку.
-- Подтверждённый непрерывный сигнал RED не вызывает повторного срабатывания. Новый сигнал RED может снова активировать торможение.
-- Контроль скорости можно отключить независимо от защиты по красному показанию локомотивной сигнализации.
+- Внешняя кнопка или рычажный переключатель, подключённые к блоку, управляют его питанием. Поворотный переключатель выбирает совместную защиту по пересечению запрещающего сигнала и по ограничителю скорости либо только защиту по сигналу. Смена режима снимает только причину по скорости; активная причина по сигналу сохраняется.
+- После фактического пересечения запрещающего показания «КРАСНЫЙ» включается полное торможение. Приближение к показанию «КРАСНЫЙ», остановка на его плоскости, откат или смена аспекта без пересечения не вызывают ложного срабатывания.
+- Превышение точной допустимой скорости запускает десятисекундное звуковое предупреждение и мигание красной лампы. Критическое превышение может включить тормоз сразу; обычное продолжающееся превышение — после предупреждения. Равенство безопасно, СЛЕДУЮЩЕЕ не используется как текущее ограничение.
+- Если машинист уже эффективно использует поездной или динамический тормоз, предупреждение может получить короткое подтверждённое продление; при критическом превышении ожидания нет.
+- Красная кнопка и назначенная клавиша вызывают физическое нажатие кнопки, включая штатную анимацию и звук. Кнопка подтверждает событие и снимает блокировку; поездной тормоз отпускается штатной рукояткой.
+- Встроенная красная кнопка и назначенная клавиша подтверждают тормозное событие, отключают сигнал тревоги и снимают блокировку; они не отпускают штатную тормозную рукоятку. Чередующийся переключатель задаёт яркость от 0% до 100%; при 0% новые защитные вмешательства запрещены и лампы гаснут, но уже сработавшее удержание сохраняется. Причины по сигналу и по превышению сохраняются раздельно. Подтверждение одной причины не снимает другую, а повторное превышение после восстановления может снова запустить предупреждение.
+
+### Управление, установка и сохранение устройств
+
+- Кнопки и рычажные переключатели управляют питанием через штатное подключение. Чередующийся переключатель задаёт яркость 0/25/50/75/100%.
 
 ## Совместимость
 
