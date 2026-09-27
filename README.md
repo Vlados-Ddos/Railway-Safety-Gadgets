@@ -47,7 +47,8 @@ Displays the cab indication supplied by the active signal provider and the selec
 RED shown ahead of a signal does not by itself apply the train brake. Protection requires the measured locomotive-end crossing of a prohibited signal in the confirmed direction. A permitted YELLOW-RED entry remains distinct from a prohibited RED.
 
 ### Speed Limiter
-<img width="384" height="384" alt="image" src="https://github.com/user-attachments/assets/c5aaf37b-aa83-4e6d-b9bd-08a59e44c948" />
+<img width="384" height="384" alt="icon" src="https://github.com/user-attachments/assets/14694dbb-c565-4a5d-89d5-3eef6257c254" />
+
 
 Displays the next whole-train speed restriction above, the distance to that same target on the middle display, and the current permitted speed below. These are route limits, not the locomotive's actual speed.
 
@@ -132,7 +133,8 @@ Railway Safety Gadgets добавляет в Derail Valley три функцио
 Показание «КРАСНЫЙ», отображаемое перед светофором, само по себе не включает тормоз. Защита требует фактического пересечения запрещающего сигнала концом локомотива в подтверждённом направлении. Разрешающий вход «ЖЁЛТО-КРАСНЫЙ» остаётся отдельным от запрещающего показания «КРАСНЫЙ».
 
 ### Speed Limiter — Ограничитель скорости
-<img width="384" height="384" alt="image" src="https://github.com/user-attachments/assets/c5aaf37b-6712-4704-88c3-e7c375d0c6f9" />
+<img width="384" height="384" alt="icon" src="https://github.com/user-attachments/assets/5c469cbb-38f3-4db7-a805-1710a0cc367b" />
+
 
 Сверху показывает следующее ограничение всего состава, на среднем дисплее — расстояние до той же цели, а снизу — текущую допустимую скорость. Это маршрутные ограничения, а не фактическая скорость локомотива.
 
