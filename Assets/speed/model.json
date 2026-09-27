@@ -1,7 +1,7 @@
 {
   "format": 1,
-  "source": "Speed_Limit_Indicator.blend",
-  "sourceSHA256": "ee54d5245d9c7fadf497be9efbd5adb784a596691a5f3291961a833df4d4ac44",
+  "source": "Speed_Limit_Indicator_Distance_RU.blend",
+  "sourceSHA256": "d97b22a2cf5ba589a034ed1d159c5a659c7fd6fff8661c0aff7db82694db9508",
   "sourceBoundsMin": [
     -0.5,
     -0.3970315456390381,
@@ -562,8 +562,8 @@
     },
     {
       "name": "Printed_Front_Panel",
-      "vertices": 674,
-      "triangles": 548,
+      "vertices": 946,
+      "triangles": 728,
       "materials": 1
     },
     {
@@ -613,6 +613,196 @@
       "vertices": 340,
       "triangles": 404,
       "materials": 2
+    },
+    {
+      "name": "Display_Distance_Digit_1_Segment_A",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_1_Segment_B",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_1_Segment_C",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_1_Segment_D",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_1_Segment_E",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_1_Segment_F",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_1_Segment_G",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_2_Segment_A",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_2_Segment_B",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_2_Segment_C",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_2_Segment_D",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_2_Segment_E",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_2_Segment_F",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_2_Segment_G",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_3_Segment_A",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_3_Segment_B",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_3_Segment_C",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_3_Segment_D",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_3_Segment_E",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_3_Segment_F",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_3_Segment_G",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_4_Segment_A",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_4_Segment_B",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_4_Segment_C",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_4_Segment_D",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_4_Segment_E",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_4_Segment_F",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Digit_4_Segment_G",
+      "vertices": 324,
+      "triangles": 164,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Internal_Board",
+      "vertices": 264,
+      "triangles": 172,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Physical_Frame",
+      "vertices": 456,
+      "triangles": 440,
+      "materials": 1
+    },
+    {
+      "name": "Display_Distance_Protective_Lens",
+      "vertices": 264,
+      "triangles": 172,
+      "materials": 1
     }
-  ]
+  ],
+  "approvedTextSources": {
+    "RU": "d97b22a2cf5ba589a034ed1d159c5a659c7fd6fff8661c0aff7db82694db9508",
+    "EN": "4b284ba15f7e332a33dfc798f2e559b7481962a1b3a0d96d5a2561e5456db382"
+  }
 }

@@ -12,6 +12,9 @@ namespace RailwaySafetyGadgets
         public bool Known, SplitYellowRed;
         public WarningKind Warning;
         public CabSignalDetail Detail;
+        // Explicit protection result, independent of supplementary lamp colours.
+        // null preserves the public legacy semantic-display contract.
+        public bool? ProtectionStop;
         public float Green, Yellow, SecondYellow, Red, White, Blue;
     }
 
@@ -66,13 +69,58 @@ namespace RailwaySafetyGadgets
         }
     }
 
+    // Identify a curve by its physical boundary, not its changing speed or distance.
+    // Remember recent boundaries across unavailable frames and direction changes.
+    public sealed class CurveWarningGate
+    {
+        private struct Notice { internal object Track; internal double Span; internal int Direction, Limit; }
+        private readonly Notice[] notices = new Notice[16];
+        private int cursor;
+        public void Reset() { System.Array.Clear(notices, 0, notices.Length); cursor = 0; }
+        public bool Observe(bool known, bool active, object track, double span, int direction, int? target,
+            object headTrack, double headSpan, int headDirection)
+        {
+            if (!known) return false;
+            for (int i = 0; i < notices.Length; i++)
+            {
+                var n = notices[i];
+                // Only confirmed physical passage retires a notice. Losing the
+                // route or reversing at a standstill must not rearm its sound.
+                if (n.Track != null && ReferenceEquals(n.Track, headTrack) && n.Direction == headDirection &&
+                    (headSpan - n.Span) * headDirection > .001) notices[i] = default(Notice);
+            }
+            if (!active || track == null || !target.HasValue) return false;
+            for (int i = 0; i < notices.Length; i++)
+                if (ReferenceEquals(notices[i].Track, track) && notices[i].Direction == direction &&
+                    System.Math.Abs(notices[i].Span - span) < .001 && notices[i].Limit == target.Value) return false;
+            notices[cursor] = new Notice { Track = track, Span = span, Direction = direction, Limit = target.Value };
+            cursor = (cursor + 1) % notices.Length;
+            return true;
+        }
+    }
+
+    [System.Flags]
+    public enum BrakeHoldCause { None = 0, SignalPassage = 1, Speed = 2, Legacy = 4 }
     public sealed class BrakeIncident
     {
-        public bool Holding { get; private set; }
+        public BrakeHoldCause Causes { get; private set; }
+        public bool Holding { get { return Causes != BrakeHoldCause.None; } }
         public bool AlarmPending { get; private set; }
-        public void Trip() { Holding = AlarmPending = true; }
-        public void Acknowledge() { Holding = AlarmPending = false; }
-        public void Clear() { Holding = AlarmPending = false; }
-        public void Restore(bool holding, bool alarm) { Holding = holding; AlarmPending = alarm; }
+        public void Trip() { Trip(BrakeHoldCause.Legacy); }
+        public void Trip(BrakeHoldCause cause) { Causes |= cause; if (Holding) AlarmPending = true; }
+        public void Remove(BrakeHoldCause cause)
+        {
+            var before = Causes; Causes &= ~cause;
+            if (Causes != before && !Holding) AlarmPending = false;
+        }
+        public void Acknowledge() { Causes = BrakeHoldCause.None; AlarmPending = false; }
+        public void Clear() { Acknowledge(); }
+        public void Restore(bool holding, bool alarm) { Restore(holding, alarm, BrakeHoldCause.Legacy); }
+        public void Restore(bool holding, bool alarm, BrakeHoldCause causes)
+        {
+            causes &= BrakeHoldCause.SignalPassage | BrakeHoldCause.Speed | BrakeHoldCause.Legacy;
+            Causes = holding ? causes == BrakeHoldCause.None ? BrakeHoldCause.Legacy : causes : BrakeHoldCause.None;
+            AlarmPending = alarm;
+        }
     }
 }

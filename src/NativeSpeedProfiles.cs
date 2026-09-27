@@ -89,9 +89,13 @@ namespace RailwaySafetyGadgets
 
         private static IEnumerable<SpeedPoint> WithJunctions(RailTrack track, SpeedPoint[] basePoints)
         {
+            var incoming = track.inJunction; var outgoing = track.outJunction;
+            if (incoming == null && outgoing == null) return basePoints;
             var points = new List<SpeedPoint>(basePoints);
-            foreach (var junction in new[] { track.inJunction, track.outJunction }.Where(j => j != null).Distinct())
+            for (int end = 0; end < 2; end++)
             {
+                var junction = end == 0 ? incoming : outgoing;
+                if (junction == null || (end == 1 && junction == incoming)) continue;
                 SpeedPost[] posts;
                 if (!junctions.TryGetValue(junction, out posts))
                 {

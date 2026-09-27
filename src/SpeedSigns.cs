@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -227,17 +227,19 @@ namespace RailwaySafetyGadgets
             RouteLogic.FindProfileLimits(ahead, Points, out current, out next);
         }
 
-        private static IEnumerable<SpeedPoint> Points(RailTrack track)
+        internal static IEnumerable<SpeedPoint> Points(RailTrack track)
         {
-            var points = new List<SpeedPoint>(NativeSpeedProfiles.Points(track, doubleTrack));
+            var native = NativeSpeedProfiles.Points(track, doubleTrack);
             List<SpeedPost> posts;
-            if (Posts.TryGetValue(track, out posts))
+            if (!Posts.TryGetValue(track, out posts) || posts.Count == 0) return native;
+            var points = new List<SpeedPoint>(native);
                 foreach (var post in posts)
                 {
                     if (post.AdvanceWarning) continue;
                     // Authored/live native signs override coincident calculated
                     // boundaries. They are an additional source, not a prerequisite.
-                    points.RemoveAll(p => p.Direction == post.Direction && Math.Abs(p.Span - post.Span) < .75);
+                    for (int i = points.Count - 1; i >= 0; i--)
+                        if (points[i].Direction == post.Direction && Math.Abs(points[i].Span - post.Span) < .75) points.RemoveAt(i);
                     points.Add(new SpeedPoint(post.Span, post.Direction, post.Value()));
                 }
             return points;

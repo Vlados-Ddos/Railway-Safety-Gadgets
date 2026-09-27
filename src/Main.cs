@@ -20,10 +20,38 @@ namespace RailwaySafetyGadgets
         public const float SignalScale = .50f;
         public const float SpeedScale = .15f;
         public const float BrakeScale = .25f;
+        // Legacy serialized/API field retained. Signal selection is now controlled
+        // by the native rotary switch; an old saved value cannot mix both modes.
         public bool IncludeShuntingSignals = false;
+        public bool IncludeOldSignals = false;
         public bool UseSpeedLimiter = true;
+        public float OverspeedToleranceKmh = 5;
+        public float CriticalOverspeedKmh = 10;
+        public float SpeedWarningSeconds = 10;
+        public bool EnableRouteCurve = true;
+        public string BrakeToggleKey = "None";
+        // Migration-only input; individual volumes replace this field on save.
         public float WarningVolume = .35f;
-        public override void Save(UnityModManager.ModEntry entry) { Save(this, entry); }
+        public float SignalVolume = -1, SpeedVolume = -1, BrakeVolume = -1;
+        public bool ShouldSerializeWarningVolume() { return false; }
+        public float Volume(DeviceKind kind)
+        {
+            float selected = kind == DeviceKind.Signal ? SignalVolume : kind == DeviceKind.Speed ? SpeedVolume : BrakeVolume;
+            return (float)ProtectionPolicy.Clamp(selected, 0, 1, .35);
+        }
+        public void Normalize()
+        {
+            var p = ProtectionPolicy.Create(OverspeedToleranceKmh, CriticalOverspeedKmh, SpeedWarningSeconds);
+            OverspeedToleranceKmh = (float)p.ToleranceKmh; CriticalOverspeedKmh = (float)p.CriticalKmh;
+            SpeedWarningSeconds = (float)p.WarningSeconds;
+            float legacy = (float)ProtectionPolicy.Clamp(WarningVolume, 0, 1, .35);
+            SignalVolume = NormalizeVolume(SignalVolume, legacy);
+            SpeedVolume = NormalizeVolume(SpeedVolume, legacy);
+            BrakeVolume = NormalizeVolume(BrakeVolume, legacy);
+        }
+        private static float NormalizeVolume(float value, float legacy)
+        { return value == -1 ? legacy : (float)ProtectionPolicy.Clamp(value, 0, 1, .35); }
+        public override void Save(UnityModManager.ModEntry entry) { Normalize(); Save(this, entry); }
     }
 
     public static class Main
@@ -38,14 +66,21 @@ namespace RailwaySafetyGadgets
         internal static Harmony Harmony;
         private static float nextIntegration;
         public static bool IncludeShuntingSignals { get { return Settings != null && Settings.IncludeShuntingSignals; } }
+        public static bool IncludeOldSignals { get { return Settings != null && Settings.IncludeOldSignals; } }
         public static bool UseSpeedLimiter { get { return Settings == null || Settings.UseSpeedLimiter; } }
+        // The permitted-speed display is intentionally fixed at 1 km/h. The
+        // former 1/5/10 km/h preference was removed from both the UI and save
+        // model; old serialized values therefore cannot affect calculations.
+        public static int DisplayStep { get { return 1; } }
+        public static bool RouteCurveEnabled { get { return Settings != null && Settings.EnableRouteCurve; } }
+        public static ProtectionPolicy Protection { get { return Settings == null ? ProtectionPolicy.Create(5, 10, 10) :
+            ProtectionPolicy.Create(Settings.OverspeedToleranceKmh, Settings.CriticalOverspeedKmh, Settings.SpeedWarningSeconds); } }
 
         public static bool Load(UnityModManager.ModEntry entry)
         {
             Entry = entry; ModPath = entry.Path;
             Settings = UnityModManager.ModSettings.Load<Settings>(entry) ?? new Settings();
-            Settings.WarningVolume = float.IsNaN(Settings.WarningVolume) || float.IsInfinity(Settings.WarningVolume)
-                ? .35f : Mathf.Clamp01(Settings.WarningVolume);
+            Settings.Normalize();
             entry.OnGUI = OnGUI;
             entry.OnSaveGUI = e => Settings.Save(e);
             entry.OnUpdate = OnUpdate;
@@ -58,6 +93,8 @@ namespace RailwaySafetyGadgets
                 PlacementSetup.Install(Harmony);
                 EmergencyBrakeLock.Install(Harmony);
                 Texts.Install(Harmony);
+                ControllerPort.Install(Harmony);
+                GadgetItemLifetime.Install(Harmony);
                 CustomGadgetBaseMap.RegisterGadgetImplementation(typeof(GadgetAuthoring), typeof(SafetyGadget), ConfigureGadget);
                 Harmony.Patch(AccessTools.Method(typeof(ItemModsFinder), "InitializeItems"), postfix: new HarmonyMethod(typeof(ItemRegistration), nameof(ItemRegistration.Register)));
                 return true;
@@ -69,7 +106,17 @@ namespace RailwaySafetyGadgets
         {
             // Release track event subscriptions even when every display was removed
             // before the world unload and no LocoService remains to query the route.
-            if (UnloadWatcher.isUnloading) { SpeedSigns.ClearSession(); return; }
+            if (UnloadWatcher.isUnloading)
+            {
+                SpeedSigns.ClearSession();
+                // The adapter is process-lived; no active locomotive may remain
+                // to refresh it after the last gadget was removed from the world.
+                try { LocoService.Signals?.Refresh(); }
+                catch (Exception ex) { ErrorOnce("signals-unload", ex); }
+                return;
+            }
+            try { BrakeInput.Update(); }
+            catch (Exception ex) { ErrorOnce("brake-input", ex); }
             if (!integrations)
             {
                 integrations = true;
@@ -97,7 +144,7 @@ namespace RailwaySafetyGadgets
 
         internal static void ConfigureGadget(custom_item_components.GadgetBase source, ref GadgetBase target)
         {
-            ((SafetyGadget)target).kind = ((GadgetAuthoring)source).kind;
+            ((SafetyGadget)target).ConfigureKind(((GadgetAuthoring)source).kind);
             var requirements = new TrainCarCustomization.TrainCarCustomizerBase.TrainCarRequirements
             {
                 trainCarPresence = TrainCarCustomization.TrainCarCustomizerBase.CustomizerTrainCarRequirements.RequireInterior,
@@ -120,22 +167,41 @@ namespace RailwaySafetyGadgets
         public static void LogOnce(string key, string message) { if (Errors.Add(key)) Log(message); }
         internal static void ErrorOnce(string key, Exception ex)
         {
-            if (Errors.Add(key)) Entry.Logger.Error(key + ": " + ex);
+            if (Errors.Add(key)) Entry.Logger.Error(Texts.Pick("Ошибка мода", "Mod error") + " [" + key + "]: " + ex);
         }
 
         private static void OnGUI(UnityModManager.ModEntry entry)
         {
             GUILayout.Label(Texts.Pick("Настройки", "Options"));
-            bool shunting = GUILayout.Toggle(Settings.IncludeShuntingSignals, Texts.Pick("Локомотивный светофор: учитывать маневровые сигналы", "Locomotive Signal Repeater: include shunting signals"));
-            if (shunting != Settings.IncludeShuntingSignals)
+            bool oldSignals = GUILayout.Toggle(Settings.IncludeOldSignals, Texts.Pick("АЛС: учитывать старые сигналы (семафоры)", "Cab signal: include old signals (semaphores)"));
+            GUILayout.Label(Texts.Pick("Учитывать семафоры в нормальном режиме.", "Include semaphores in normal mode."));
+            if (oldSignals != Settings.IncludeOldSignals)
             {
-                Settings.IncludeShuntingSignals = shunting;
-                foreach (var service in LocoService.All) if (service != null) service.DeviceStateChanged();
+                Settings.IncludeOldSignals = oldSignals;
+                foreach (var service in LocoService.All) if (service != null) service.SignalSelectionChanged();
             }
-            Settings.UseSpeedLimiter = GUILayout.Toggle(Settings.UseSpeedLimiter,
-                Texts.Pick("Тормозной блок: использовать Ограничитель скорости", "Automatic Brake Unit: use Speed Limiter"));
-            GUILayout.Label(Texts.Pick("Громкость предупреждений: ", "Warning volume: ") + Mathf.RoundToInt(Settings.WarningVolume * 100) + "%");
-            Settings.WarningVolume = GUILayout.HorizontalSlider(Settings.WarningVolume, 0, 1);
+            Settings.OverspeedToleranceKmh = Slider(Texts.Pick("Допуск превышения, км/ч", "Overspeed tolerance, km/h"), Settings.OverspeedToleranceKmh, 0, 15);
+            Settings.CriticalOverspeedKmh = Slider(Texts.Pick("Критическое превышение над допустимой скоростью, км/ч", "Critical excess above permitted speed, km/h"),
+                Settings.CriticalOverspeedKmh, Settings.OverspeedToleranceKmh + 1, 30);
+            Settings.SpeedWarningSeconds = Slider(Texts.Pick("Предупреждение, секунд", "Warning time, seconds"), Settings.SpeedWarningSeconds, 1, 30);
+            Settings.Normalize();
+            BrakeInput.DrawSettings();
+            GUILayout.Label(Texts.Pick("Красная кнопка и назначенная ей клавиша подтверждают/сбрасывают торможение.",
+                "The red button and its assigned key acknowledge/reset braking."));
+            Settings.SignalVolume = VolumeSlider(Texts.Name(0, Texts.Russian), Settings.SignalVolume);
+            Settings.SpeedVolume = VolumeSlider(Texts.Name(1, Texts.Russian), Settings.SpeedVolume);
+            Settings.BrakeVolume = VolumeSlider(Texts.Name(2, Texts.Russian), Settings.BrakeVolume);
+        }
+        private static float VolumeSlider(string name, float value)
+        {
+            GUILayout.Label(name + Texts.Pick(": громкость ", ": volume ") + Mathf.RoundToInt(value * 100) + "%");
+            return GUILayout.HorizontalSlider(value, 0, 1);
+        }
+
+        private static float Slider(string label, float value, float minimum, float maximum)
+        {
+            GUILayout.Label(label + ": " + value.ToString("0"));
+            return Mathf.Round(GUILayout.HorizontalSlider(value, minimum, maximum));
         }
     }
 
@@ -193,7 +259,9 @@ namespace RailwaySafetyGadgets
                     shelf.SetActive(true);
                     var info = new CustomItemInfo { Name = Keys[i], Description = Texts.Description(i, Texts.Russian), Price = Prices[i], Amount = 20,
                         ShelfBounds = shelfBounds, PreviewRotation = new Vector3(90, 0, 0) };
-                    var item = new CustomItem(info, source, ModelAssets.Icon(kind, false), ModelAssets.Icon(kind, true), shelf);
+                    // Custom Item Mod adds the native ShopRestocker. Let the real
+                    // dumpster/RespawnOnDrop and purchase/save marker own disposal.
+                    var item = new CustomItem(info, source, ModelAssets.Icon(kind, false), ModelAssets.Icon(kind, true), shelf, immuneToDumpster: false);
                     item.ShopData.shelfItem.height = shelfBounds.z;
                     var nativeGadgetItem = item.ItemPrefab.GetComponent<DV.Customization.Gadgets.GadgetItem>();
                     // Same rear-face mounting rule as the native flat gadgets.

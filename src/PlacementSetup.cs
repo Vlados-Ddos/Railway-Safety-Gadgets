@@ -28,17 +28,17 @@ namespace RailwaySafetyGadgets
             if (mount == null || mount.ThisGadget == null) return false;
             var owner = mount.ThisGadget;
             var car = owner.TrainCar;
-            if (car == null || !car.IsLoco || owner.Controls == null) return false;
+            // Mounts are ordinary native GadgetComponents. Their owner is the
+            // mount gadget, which has no locomotive Controls component. The
+            // old Controls check rejected every correctly screwed-in mount
+            // before the native attachment options could inspect its size.
+            if (car == null || !car.IsLoco) return false;
             bool interior = car.interior != null && mount.transform.IsChildOf(car.interior);
             if (car.loadedInterior != null) interior |= mount.transform.IsChildOf(car.loadedInterior.transform);
             if (!interior) return false;
-            if (gadget.kind == DeviceKind.Brake)
-            {
-                var spec = owner.GadgetItem == null ? null : owner.GadgetItem.GetComponent<InventoryItemSpec>();
-                // Compare the real native inventory ID, never a guessed name or size.
-                if (spec == null || string.IsNullOrEmpty(NativeAssets.SmallMountPrefabId)) return false;
-                if (string.Equals(spec.ItemPrefabName, NativeAssets.SmallMountPrefabId, StringComparison.OrdinalIgnoreCase)) return false;
-            }
+            // Do not second-guess MountSmall or attachment dimensions here.
+            // Mount.Accepts/GetAttachmentPositions and the native Drillable
+            // mount-point check are authoritative for every gadget kind.
             return true;
         }
 

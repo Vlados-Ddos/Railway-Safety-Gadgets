@@ -114,6 +114,7 @@ namespace RailwaySafetyGadgets
                 mat.SetFloat("_Metallic", (float)md["metallic"]);
                 mat.SetFloat("_Glossiness", 1 - (float)md["roughness"]);
                 Map(mat, "_MainTex", dir, (string)tx["albedo"], false);
+                if ((string)tx["albedo"] == "Panel_BaseColor.png") LocalizedPanels.Register(mat, dir);
                 if (tx["normalUnity"] != null)
                 {
                     Map(mat, "_BumpMap", dir, (string)tx["normalUnity"], true);

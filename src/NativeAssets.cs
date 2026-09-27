@@ -10,7 +10,8 @@ namespace RailwaySafetyGadgets
     {
         private static readonly Dictionary<string, GameObject> Prefabs = new Dictionary<string, GameObject>();
         internal static AudioClip Caution, Stop, Change, Alarm, Button;
-        internal static string SmallMountPrefabId;
+        internal static string ButtonPrefabId, SwitchPrefabId;
+        internal static string RotarySwitchPrefabId, AlternatingPrefabId;
         private static bool loaded;
 
         internal static GameObject Prefab(string resource)
@@ -30,8 +31,11 @@ namespace RailwaySafetyGadgets
             if (loaded) return;
             // Exact ResourceManager keys, verified in this game's data. Their
             // referenced LampControl/Button clips are loaded with the prefabs.
-            foreach (string key in new[] { "automatictrainstop", "brakecylinderledbar", "switchsetter", "wirelessmucontroller", "digitalspeedometer", "mountsmall" }) Prefab(key);
-            SmallMountPrefabId = Prefab("mountsmall").GetComponent<InventoryItemSpec>().ItemPrefabName;
+            foreach (string key in new[] { "automatictrainstop", "brakecylinderledbar", "switchsetter", "wirelessmucontroller", "digitalspeedometer" }) Prefab(key);
+            ButtonPrefabId = Prefab("switchbutton").GetComponent<InventoryItemSpec>().ItemPrefabName;
+            SwitchPrefabId = Prefab("switchlever").GetComponent<InventoryItemSpec>().ItemPrefabName;
+            RotarySwitchPrefabId = Prefab("switchrotary").GetComponent<InventoryItemSpec>().ItemPrefabName;
+            AlternatingPrefabId = Prefab("switchalternating").GetComponent<InventoryItemSpec>().ItemPrefabName;
             var clips = Resources.FindObjectsOfTypeAll<AudioClip>();
             Caution = Find(clips, "GadgetWarning_BrakeCylinderLEDBar_Blink");
             Stop = Find(clips, "GadgetWarning_WirelessMUController_Conflict");
@@ -56,9 +60,12 @@ namespace RailwaySafetyGadgets
         private AudioSource alarm;
         private float lastVolume = -1;
         private bool stopped = true;
-        internal GadgetAudio(Transform owner)
+        private DeviceKind deviceKind;
+        internal void SetKind(DeviceKind kind) { deviceKind = kind; }
+        internal GadgetAudio(Transform owner, DeviceKind kind)
         {
             this.owner = owner;
+            deviceKind = kind;
             oneShot = Create(owner, "RSG_warnings");
         }
         private static AudioSource Create(Transform parent, string name)
@@ -73,11 +80,12 @@ namespace RailwaySafetyGadgets
         }
         internal void Play(WarningKind kind)
         {
-            if (Main.Settings.WarningVolume <= 0 || Time.timeScale <= 0 || UnloadWatcher.isUnloading) return;
+            float volume = Main.Settings.Volume(deviceKind);
+            if (volume <= 0 || Time.timeScale <= 0 || UnloadWatcher.isUnloading) return;
             AudioClip clip = kind == WarningKind.Stop ? NativeAssets.Stop : kind == WarningKind.Caution ? NativeAssets.Caution : kind == WarningKind.Change ? NativeAssets.Change : null;
             if (clip == null) return;
             oneShot.Stop(); oneShot.clip = clip;
-            SetVolume(Mathf.Clamp01(Main.Settings.WarningVolume));
+            SetVolume(volume);
             oneShot.Play(); stopped = false;
         }
         private void SetVolume(float volume)
@@ -89,7 +97,7 @@ namespace RailwaySafetyGadgets
         }
         internal void Update(bool powered, bool alarmPending)
         {
-            float volume = Mathf.Clamp01(Main.Settings.WarningVolume);
+            float volume = Main.Settings.Volume(deviceKind);
             SetVolume(volume);
             if (!powered || Time.timeScale <= 0 || UnloadWatcher.isUnloading || volume <= 0)
             {

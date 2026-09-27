@@ -1,9 +1,9 @@
 namespace RailwaySafetyGadgets
 {
-    public enum CabAspect { White, Green, Yellow, YellowRed, Red }
+    public enum CabAspect { White, Green, Yellow, YellowRed, Red, GreenYellow }
 
-    // ALS indications are semantic states. Track lamp colours/blink phases are
-    // deliberately not inputs: a stop ahead is YR, not the cab's post-entry red.
+    // The adapter maps confirmed native aspects. Decide is retained as the
+    // public legacy block-occupation API; the current adapter does not use it.
     public static class CabSignalLogic
     {
         public static CabAspect Decide(bool occupiedCurrent, bool forbiddenEntry,
@@ -21,14 +21,16 @@ namespace RailwaySafetyGadgets
         {
             display.Green = display.Yellow = display.SecondYellow = display.Red = display.White = display.Blue = 0;
             display.Detail = CabSignalDetail.None;
+            display.ProtectionStop = aspect == CabAspect.Red;
             display.SplitYellowRed = aspect == CabAspect.YellowRed;
             display.Known = aspect != CabAspect.White;
             display.Key = key == null ? "cab:" + aspect : key + ":" + aspect;
             display.Warning = aspect == CabAspect.Red || aspect == CabAspect.YellowRed ? WarningKind.Stop :
-                aspect == CabAspect.Yellow ? WarningKind.Caution : aspect == CabAspect.Green ? WarningKind.Change : WarningKind.None;
+                aspect == CabAspect.Yellow || aspect == CabAspect.GreenYellow ? WarningKind.Caution : aspect == CabAspect.Green ? WarningKind.Change : WarningKind.None;
             switch (aspect)
             {
                 case CabAspect.Green: display.Green = 1; break;
+                case CabAspect.GreenYellow: display.Green = display.Yellow = 1; break;
                 case CabAspect.Yellow: display.Yellow = 1; break;
                 case CabAspect.YellowRed: display.SecondYellow = display.Red = 1; break;
                 case CabAspect.Red: display.Red = 1; break;
@@ -65,9 +67,9 @@ namespace RailwaySafetyGadgets
             {
                 case CabSignalDetail.ExpectRestricted: lamps.Green = blink; break;
                 case CabSignalDetail.RestrictedClear: lamps.Green = 1; lamps.Yellow = blink; break;
-                case CabSignalDetail.RestrictedStop: lamps.SecondYellow = 1; lamps.Yellow = blink; break;
+                case CabSignalDetail.RestrictedStop: lamps.Yellow = blink; break;
                 case CabSignalDetail.RestrictedRestricted: lamps.Green = lamps.Yellow = blink; break;
-                case CabSignalDetail.RestrictedEntry: lamps.Red = 1; lamps.Yellow = blink; break;
+                case CabSignalDetail.RestrictedEntry: lamps.SplitYellowRed = true; lamps.Red = lamps.SecondYellow = 1; break;
             }
         }
     }

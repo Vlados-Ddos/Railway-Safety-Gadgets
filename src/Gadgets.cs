@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using DV.CabControls;
 using DV.Customization;
 using DV.Customization.Gadgets;
+using DV.Customization.Gadgets.Implementations;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 
@@ -20,20 +21,48 @@ namespace RailwaySafetyGadgets
         public DeviceKind kind;
         public readonly BrakeIncident Incident = new BrakeIncident();
         public bool Tripped { get { return Incident.Holding; } }
-        internal bool BrakeWarningActive { get { return kind == DeviceKind.Brake && service != null && service.BrakeWarningActive; } }
         internal bool ForceRemovalInProgress { get; private set; }
         private LocoService service;
         private GadgetVisuals visuals;
         private ButtonBase button;
+        private KeyboardButtonAccess keyboardAccess;
         private GadgetAudio audio;
+        private GadgetSwitch externalSwitch;
+        private bool controlPortRegistered;
+        private float controllerBrightness = 1f;
+        private bool cabModeSwitch, shuntingMode;
+        public bool HasCabModeSwitch { get { return HasExternalControl && cabModeSwitch; } }
+        public bool ShuntingMode { get { return HasCabModeSwitch && shuntingMode; } }
+        public bool HasModeSwitch { get { return HasExternalControl && cabModeSwitch; } }
+        public bool CurveMode { get { return kind == DeviceKind.Speed && HasModeSwitch && shuntingMode; } }
+        public bool SpeedProtection { get { return kind == DeviceKind.Brake && !(HasModeSwitch && shuntingMode); } }
+        public bool HasExternalControl { get { return externalSwitch != null; } }
+        public float Brightness { get { return HasExternalControl ? controllerBrightness : 1f; } }
+        public bool ProtectionEnabled { get { return Brightness > 0f; } }
 
-        public bool Operational { get { return IsOnTrainCar && IsLinked && MountedOn != null && PowerState && IsSoldered && ArePlacementRequirementsMet; } }
+        public bool Operational { get { return IsOnTrainCar && IsLinked && MountedOn != null && PowerState && IsSoldered && ArePlacementRequirementsMet && (kind == DeviceKind.Brake || ProtectionEnabled); } }
 
         protected override void Awake()
         {
             base.Awake();
+            InitializeControlPort();
             visuals = new GadgetVisuals(this);
-            audio = new GadgetAudio(transform);
+            audio = new GadgetAudio(transform, kind);
+        }
+
+        internal void ConfigureKind(DeviceKind value)
+        {
+            kind = value;
+            if (audio != null) audio.SetKind(kind);
+            InitializeControlPort();
+        }
+        private void InitializeControlPort()
+        {
+            // Custom Item Mod adds the component before it applies kind. Support
+            // both native Awake orders without registering duplicate ports.
+            if (controlPortRegistered) return;
+            new ControllerPort(this, SwitchWired, SwitchUnwired);
+            controlPortRegistered = true;
         }
 
         private void Start()
@@ -41,6 +70,16 @@ namespace RailwaySafetyGadgets
             if (kind != DeviceKind.Brake) return;
             button = GetComponentInChildren<ButtonBase>(true);
             if (button != null) button.Used += ResetActivation;
+        }
+
+        protected override void OnItemAssigned()
+        {
+            base.OnItemAssigned();
+            // Native GadgetItem.Awake creates a separate, initially inactive
+            // gadget root. Pair its lifetime before Start or save restoration.
+            var lifetime = GadgetItem.GetComponent<GadgetItemLifetime>();
+            if (lifetime == null) lifetime = GadgetItem.gameObject.AddComponent<GadgetItemLifetime>();
+            lifetime.Bind(this);
         }
 
         public override bool IsValidTarget(Customization target, Collider hitCollider)
@@ -87,7 +126,7 @@ namespace RailwaySafetyGadgets
         {
             bool operational = Operational;
             if (visuals != null) visuals.Update(service, operational);
-            if (audio != null) audio.Update(operational, kind == DeviceKind.Brake && (Incident.AlarmPending || BrakeWarningActive));
+            if (audio != null) audio.Update(operational, kind == DeviceKind.Brake && Incident.AlarmPending);
         }
 
         internal void PlayWarning(WarningKind warning) { if (Operational && audio != null) audio.Play(warning); }
@@ -95,8 +134,14 @@ namespace RailwaySafetyGadgets
 
         private new void OnDestroy()
         {
+            // Fallback for direct destruction or an interrupted native Unlink.
+            // Native Unwire removes both endpoints before notifying listeners.
+            try { if (!UnloadWatcher.isUnloading) wiring.UnwireAll(); }
+            catch (Exception ex) { Main.ErrorOnce("destroyed-gadget-wires", ex); }
+            if (externalSwitch != null) externalSwitch.OnOutputValueUpdated -= SwitchUpdated;
             if (button != null) button.Used -= ResetActivation;
             if (service != null) service.Remove(this);
+            service = null; Incident.Clear();
             base.OnDestroy();
         }
 
@@ -105,6 +150,42 @@ namespace RailwaySafetyGadgets
             if (service != null) service.Acknowledge(this);
             else Incident.Acknowledge();
             if (audio != null) audio.Update(Operational, Incident.AlarmPending);
+        }
+        internal bool PressButton()
+        {
+            // Use the same native entry point as physical input: Used, value
+            // pulse, sound, cap travel and return are owned by ButtonBase.
+            if (!KeyboardButtonAccess.CanPress(button, ref keyboardAccess)) return false;
+            button.Use(); return true;
+        }
+        private void SwitchWired(GadgetSwitch sw)
+        {
+            if (externalSwitch == sw) return;
+            if (externalSwitch != null) externalSwitch.OnOutputValueUpdated -= SwitchUpdated;
+            externalSwitch = sw;
+            if (sw != null) sw.OnOutputValueUpdated += SwitchUpdated;
+            SwitchUpdated(sw);
+        }
+        private void SwitchUnwired(GadgetSwitch sw)
+        {
+            if (externalSwitch != sw) return;
+            if (sw != null) sw.OnOutputValueUpdated -= SwitchUpdated;
+            externalSwitch = null; SwitchUpdated(null);
+        }
+        private void SwitchUpdated(GadgetSwitch sw)
+        {
+            bool modeSwitch = ControllerPort.IsCabModeSwitch(sw);
+            bool shunting = modeSwitch && sw.OutputValueOf(this) > 0f;
+            bool modeChanged = shuntingMode != shunting || cabModeSwitch != modeSwitch;
+            cabModeSwitch = modeSwitch; shuntingMode = shunting;
+            float value = modeSwitch ? 1f : ControllerPort.BrightnessOf(sw, this);
+            if (controllerBrightness == value && !modeChanged) return;
+            bool powerChanged = (controllerBrightness > 0f) != (value > 0f);
+            controllerBrightness = value;
+            // Nonzero dimming only invalidates rendered colours, never route
+            // history, RED acknowledgement, deadlines or the calculated curve.
+            if (powerChanged && service != null) service.DeviceStateChanged();
+            if (modeChanged && service != null) service.GadgetModeChanged();
         }
 
         public override GadgetItem ForceRemove(bool reparentToTrainCar = true)
@@ -122,6 +203,8 @@ namespace RailwaySafetyGadgets
             dst["rsgVersion"] = 4; dst["rsgPower"] = PowerSwitch;
             dst["rsgTripped"] = Tripped;
             dst["rsgAlarmPending"] = Incident.AlarmPending;
+            dst["rsgBrakeCauses"] = (int)Incident.Causes;
+            if (service != null) dst["rsgDirection"] = service.ActiveDirection;
         }
 
         public override void SaveDataLoaded(JObject src)
@@ -140,15 +223,19 @@ namespace RailwaySafetyGadgets
                     GadgetItem.transform.position += GadgetItem.transform.TransformVector(offset);
             }
             PowerSwitch = (bool?)src["rsgPower"] ?? true;
+            // 1.0.15 used this private state for a keyboard gadget toggle.
+            // The keyboard now presses the real reset button, so an old false
+            // value must not leave an unwired protection block unusable.
             bool held = (bool?)src["rsgTripped"] ?? false;
-            Incident.Restore(held, (bool?)src["rsgAlarmPending"] ?? held);
-            if (service != null) service.ResetHistory();
+            Incident.Restore(held, (bool?)src["rsgAlarmPending"] ?? held,
+                (BrakeHoldCause)((int?)src["rsgBrakeCauses"] ?? (int)BrakeHoldCause.Legacy));
+            if (service != null) { service.ResetHistory(); service.RestoreDirection((int?)src["rsgDirection"] ?? 0); }
         }
 
         public override void AfterSaveDataLoaded(JObject src)
         {
             base.AfterSaveDataLoaded(src);
-            if (service != null) service.ResetHistory();
+            if (service != null) { service.ResetHistory(); service.RestoreDirection((int?)src["rsgDirection"] ?? 0); }
         }
     }
 
@@ -160,9 +247,11 @@ namespace RailwaySafetyGadgets
         private readonly Dictionary<Renderer, Texture> lastSplitBase = new Dictionary<Renderer, Texture>();
         private readonly Renderer[,] lenses = new Renderer[2, 5];
         private readonly Renderer[,,] segments = new Renderer[2, 3, 7];
+        private readonly Renderer[,] distanceSegments = new Renderer[4, 7];
         private readonly Renderer arrow, power, brake;
         private bool speedInitialized, lastActive;
-        private int? lastNext, lastCurrent;
+        private float brightness = 1f, lastSpeedBrightness = -1f;
+        private int? lastNext, lastCurrent, lastDistance;
         private readonly MaterialPropertyBlock block = new MaterialPropertyBlock();
         private readonly SignalDisplay signalLamps = new SignalDisplay();
         private static readonly int Emission = Shader.PropertyToID("_EmissionColor");
@@ -183,12 +272,16 @@ namespace RailwaySafetyGadgets
                 for (int digit = 0; digit < 3; digit++)
                     for (int seg = 0; seg < 7; seg++)
                         segments[row, digit, seg] = Find((row == 0 ? "Display_Next_" : "Display_Current_") + "Digit_" + (digit + 1) + "_Segment_" + (char)('A' + seg));
+            for (int digit = 0; digit < 4; digit++)
+                for (int seg = 0; seg < 7; seg++)
+                    distanceSegments[digit, seg] = Find("Display_Distance_Digit_" + (digit + 1) + "_Segment_" + (char)('A' + seg));
             arrow = Find("Red_Prismatic_Indicator_Lens");
             power = Find("Power_Green_Convex_Lens"); brake = Find("Brake_Red_Convex_Lens");
         }
 
         internal void Update(LocoService service, bool active)
         {
+            brightness = gadget.Brightness;
             if (gadget.kind == DeviceKind.Signal)
             {
                 SignalDisplay value = active && service != null ? service.CabDisplay : null;
@@ -209,32 +302,45 @@ namespace RailwaySafetyGadgets
             }
             else if (gadget.kind == DeviceKind.Speed)
             {
-                int? next = service == null ? null : service.NextSpeed, current = service == null ? null : service.CurrentSpeed;
-                if (speedInitialized && lastActive == active && lastNext == next && lastCurrent == current) return;
-                speedInitialized = true; lastActive = active; lastNext = next; lastCurrent = current;
-                for (int row = 0; row < 2; row++)
+                int? next = service == null ? null : service.NextSpeed, current = service == null ? null : service.DisplaySpeed;
+                int? distance = service == null ? null : service.DisplayDistance;
+                bool presentationChanged = !speedInitialized || lastActive != active || lastSpeedBrightness != brightness;
+                if (presentationChanged || lastNext != next || lastCurrent != current)
                 {
-                    int? value = row == 0 ? next : current;
-                    for (int digit = 0; digit < 3; digit++)
+                    for (int row = 0; row < 2; row++)
                     {
-                        int mask = active ? RouteLogic.DigitSegments(value, digit) : 0;
-                        for (int seg = 0; seg < 7; seg++)
-                            Set(segments[row, digit, seg],
-                                (mask & (1 << seg)) != 0 ? (row == 0 ? new Color(.70f, .075f, .008f) : Color.white * .60f) : Color.black, true);
+                        int? value = row == 0 ? next : current;
+                        for (int digit = 0; digit < 3; digit++)
+                        {
+                            int mask = active ? RouteLogic.DigitSegments(value, digit) : 0;
+                            for (int seg = 0; seg < 7; seg++)
+                                Set(segments[row, digit, seg],
+                                    (mask & (1 << seg)) != 0 ? (row == 0 ? new Color(.70f, .075f, .008f) : Color.white * .60f) : Color.black, true);
+                        }
                     }
+                    Set(arrow, active && FeedbackLogic.IsReduction(current, next)
+                        ? new Color(.65f, .01f, .005f) : Color.black, true);
                 }
-                Set(arrow, active && FeedbackLogic.IsReduction(current, next)
-                    ? new Color(.65f, .01f, .005f) : Color.black, true);
+                if (presentationChanged || lastDistance != distance)
+                    for (int digit = 0; digit < 4; digit++)
+                    {
+                        int mask = active ? RouteLogic.DistanceDigitSegments(distance, digit) : 0;
+                        for (int seg = 0; seg < 7; seg++)
+                            Set(distanceSegments[digit, seg], (mask & (1 << seg)) != 0 ? new Color(.035f, .48f, .70f) : Color.black, true);
+                    }
+                speedInitialized = true; lastActive = active; lastNext = next; lastCurrent = current;
+                lastDistance = distance; lastSpeedBrightness = brightness;
             }
             else
             {
-                Set(power, active ? new Color(.025f, 1.8f, .06f) : Color.black);
+                Set(power, active && gadget.ProtectionEnabled ? new Color(.025f, 1.8f, .06f) : Color.black);
                 Set(brake, active && (gadget.Tripped || gadget.Incident.AlarmPending || (service != null && service.BrakeWarningLampOn)) ? new Color(2.2f, .025f, .015f) : Color.black);
             }
         }
 
         private void Set(Renderer renderer, Color color, bool solidEmission = false)
         {
+            color.r *= brightness; color.g *= brightness; color.b *= brightness;
             Color old;
             if (renderer == null) return;
             if (last.TryGetValue(renderer, out old) && old == color) return;
@@ -262,6 +368,7 @@ namespace RailwaySafetyGadgets
                 baseMap = map = Texture2D.whiteTexture;
                 color = new Color(2.2f, 1.25f, .015f) * display.SecondYellow;
             }
+            color.r *= brightness; color.g *= brightness; color.b *= brightness;
             Color old; Texture2D oldMap; Texture oldBase;
             if (last.TryGetValue(renderer, out old) && old == color &&
                 lastSplitMap.TryGetValue(renderer, out oldMap) && oldMap == map &&
