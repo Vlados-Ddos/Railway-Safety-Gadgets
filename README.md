@@ -25,7 +25,7 @@ Enjoy my Derail Valley mods? You can support my work on Ko-fi!
 - DV Signals is optional. When it is available, the signal repeater uses its real aspects, reservations and block state; without it, ALS shows WHITE and does not create signal braking. Speed limits, Brake Curve Control, overspeed protection and the other gadgets continue to work.
 - Whole-train speed supervision accounts for the relevant end of the consist: a reduction applies when the head enters the slower zone, while an increase applies after the tail clears it.
 - The permitted-speed display uses a fixed 1 km/h step. The distance display is separate and uses speed-dependent metre bands, with hysteresis, dashes for unknown data and HI for values beyond four digits.
-- Physical reset buttons, assigned keys, native switches and alternating controllers use the same interaction paths as the game; keyboard reset follows the game's keyboard-control and reach permissions.
+- Physical reset buttons, assigned keys, native switches, alternating controllers and Analog Controllers use the same interaction paths as the game; keyboard reset follows the game's keyboard-control and reach permissions.
 - Russian and English localization is selected automatically, including separate panel textures and gadget descriptions. Each device has its own warning volume and brightness control.
 - Native shop, save, retrieval and disposal behavior is preserved. Removing a purchased gadget and leaving it in the native dumpster returns stock only after the normal game disposal process; it does not refund money.
 
@@ -39,7 +39,7 @@ The images below are the project's existing inventory renders. Printed legends a
 Displays the cab indication supplied by the active signal provider and the selected route.
 
 - GREEN, YELLOW, YELLOW-RED, RED, GREEN-YELLOW and WHITE indications, plus confirmed flashing combinations where the native aspect supports them. Both physical faces show the same state.
-- A button or lever switch wired to the repeater controls its power. The two-position rotary switch selects normal or shunting mode. The alternating controller sets brightness from 0% to 100%; it does not change the signal mode. Old semaphore signals can be included from the mod setting and are disabled by default.
+- A button or lever switch wired to the repeater controls its power. The two-position rotary switch selects normal or shunting mode. The alternating controller sets brightness from 0% to 100%; the Analog Controller provides continuous brightness and neither changes the signal mode. Old semaphore signals can be included from the mod setting and are disabled by default.
 - The confirmed reverser direction is kept through rollback and handle changes while moving; a new direction is accepted only after the train has stopped and departed that way.
 - The device ignores the player's own consist when checking occupied blocks. Reservations and restricted entry are read from the selected route and do not turn a simple red lamp into a false permission.
 - WHITE means that no reliable cab-signal data is available. It is non-protective when DV Signals is absent or unavailable, and power loss extinguishes the lamps.
@@ -54,7 +54,7 @@ Displays the next whole-train speed restriction above, the distance to that same
 - Follows the confirmed reverser direction and selected branch, including reverse movement, rollback and direction changes after a stop.
 - Uses native speed profiles and the active Double Track provider when available. It can determine limits without visible signs; unknown values appear as dashes.
 - A lower restriction is paired with the train-head entry point. A higher restriction is paired with the last-carriage clearance point, so long consists remain protected until the whole train is clear.
-- A button or lever switch wired to the limiter controls its power. The rotary switch selects normal whole-train supervision or Brake Curve Control. The alternating controller sets brightness from 0% to 100%; at 0% the limiter is inactive. The curve uses precise Brake Curve Control data, current speed, target distance, gradient and train length; only the displayed numbers are rounded.
+- A button or lever switch wired to the limiter controls its power. The rotary switch selects normal whole-train supervision or Brake Curve Control. The alternating controller sets brightness from 0% to 100%; the Analog Controller provides continuous brightness; at 0% the limiter is inactive. The curve uses precise whole-train data, current speed, target distance, gradient and train length; only the displayed numbers are rounded.
 - The permitted-speed row is always displayed in 1 km/h steps. The distance readout uses 1/5/10/50/100 m floor bands according to train speed and does not change braking calculations.
 - A lower upcoming restriction produces one warning and the existing red reduction arrow. Equal or higher limits do not create a false reduction warning.
 
@@ -72,7 +72,23 @@ Applies the native train-brake lock when the corresponding protection cause is c
 
 ### Controls, mounting and saved items
 
-- Buttons and lever switches control device power through native wiring. The alternating controller sets 0/25/50/75/100% brightness.
+- Buttons and lever switches control device power through native wiring. The rotary Switch selects the device mode independently and can work alongside one power or brightness controller. The alternating controller sets 0/25/50/75/100% brightness; the Analog Controller provides continuous 0–100%.`n- The assigned reset key presses the real red button with its native animation and follows the game's keyboard-control and reach restrictions. A latched brake unit must be reset before ordinary removal.
+
+### Standard rotary switch modes
+
+| Recipient | Position 0 / no rotary | Position 1 |
+|---|---|---|
+| Locomotive Signal Repeater | Normal signals; optional old signals | Shunting signals |
+| Speed Limiter | Confirmed whole-train speed limit | Whole-train limit plus Brake Curve Control |
+| Automatic Brake Unit | Signal passage plus speed protection | Signal passage only |
+
+## Brake Curve Control
+
+Brake Curve Control uses the same whole-train profile as the ordinary limiter and does not use signals. It considers every real lower restriction ahead, current speed, target speed, total train mass, available developed service-brake force, opposing traction, route gradient and the distance from the leading end to the target.
+
+The curve uses the energy relation v² = v_target² + 2aD. It reaches the target speed at the actual boundary when the available physical inputs allow it; it does not add a fixed distance threshold, a second safety margin or the Automatic Brake warning timer. A heavier or less-braked consist can begin reducing earlier because its available deceleration is lower, while a short or well-braked consist can remain at the current limit longer.
+
+Increases never create a downward curve, and several reductions are considered together without replacing the upper next-limit and distance pair. The exact permitted speed is used for protection; only the displayed value is rounded down to 1 km/h. Coupling, uncoupling, route changes and confirmed direction changes rebuild the relevant data.
 
 ## Compatibility
 
@@ -159,9 +175,26 @@ Railway Safety Gadgets добавляет в Derail Valley три функцио
 
 - Кнопки и рычажные переключатели управляют питанием через штатное подключение. Чередующийся переключатель задаёт яркость 0/25/50/75/100%.
 
+### Режимы поворотного переключателя
+
+| Устройство | Положение 0 / без переключателя | Положение 1 |
+|---|---|---|
+| Локомотивный светофор | Нормальные сигналы; старые семафоры по настройке | Маневровые сигналы |
+| Ограничитель скорости | Подтверждённое ограничение всего состава | Ограничение всего состава и Управление тормозной кривой |
+| Блок автоматического торможения | Проезд запрещающего сигнала и превышение скорости | Только проезд запрещающего сигнала |
+
+## Управление тормозной кривой
+
+Управление тормозной кривой использует тот же профиль всего состава, что и обычный ограничитель, и не использует сигналы. Учитываются реальные снижения впереди, текущая и целевая скорость, масса всего состава, доступное развившееся служебное тормозное усилие, тяга против движения, уклон и расстояние от головы состава до цели.
+
+Кривая использует энергетическое соотношение v² = vцели² + 2aD. При доступных физических данных она приходит к целевой скорости у фактической границы; фиксированного радиуса, второго запаса безопасности и таймера предупреждения автоматического торможения в ней нет. Тяжёлый или хуже тормозящий состав может начать снижение раньше из-за меньшего замедления, а короткий или хорошо тормозящий — дольше сохранять текущее ограничение.
+
+Повышения не создают нисходящую кривую, а несколько снижений учитываются вместе. Защита использует точную допустимую скорость, дисплей округляет её вниз до 1 км/ч. После сцепки, расцепки, смены маршрута или подтверждённого направления данные перестраиваются.
+
 ## Совместимость
 
 - [Career Rework](https://www.nexusmods.com/derailvalley/mods/1153): полная совместимость.
 - [Shop Rework](https://www.nexusmods.com/derailvalley/mods/1200): полная совместимость.
 - [Double Track](https://www.nexusmods.com/derailvalley/mods/1487): полная совместимость.
 - Мультиплеер: пока не поддерживается. Совместимость планируется добавить в одном из будущих обновлений после реализации синхронизации предметов и устройств в мультиплеерном моде.
+
