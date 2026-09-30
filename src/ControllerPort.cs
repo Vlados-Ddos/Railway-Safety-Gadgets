@@ -4,6 +4,7 @@ using DV.Customization.Gadgets;
 using DV.Customization.Gadgets.Implementations;
 using HarmonyLib;
 using Newtonsoft.Json.Linq;
+using UnityEngine;
 
 namespace RailwaySafetyGadgets
 {
@@ -12,20 +13,29 @@ namespace RailwaySafetyGadgets
     internal sealed class ControllerPort : GadgetWiringModule.WireLinkPort<GadgetSwitch>
     {
         private GadgetWiringModule.WireLinkPort linked;
-        internal ControllerPort(SafetyGadget owner, Action<GadgetSwitch> onWired, Action<GadgetSwitch> onUnwired)
-            : base(owner, false, onWired, onUnwired) { }
+        private readonly bool mode;
+        internal ControllerPort(SafetyGadget owner, Action<GadgetSwitch> onWired, Action<GadgetSwitch> onUnwired, bool mode = false)
+            : base(owner, false, onWired, onUnwired) { this.mode = mode; }
         internal static bool Accepts(GadgetSwitch controller)
         {
             if (controller == null || controller.GadgetItem == null) return false;
             var spec = controller.GadgetItem.GetComponent<InventoryItemSpec>();
             if (spec == null || string.IsNullOrEmpty(spec.ItemPrefabName)) return false;
             if (controller is AlternatingController) return spec.ItemPrefabName == NativeAssets.AlternatingPrefabId;
+            if (spec.ItemPrefabName == NativeAssets.AnalogPrefabId) return true;
             return spec.ItemPrefabName == NativeAssets.ButtonPrefabId || spec.ItemPrefabName == NativeAssets.SwitchPrefabId ||
                 spec.ItemPrefabName == NativeAssets.RotarySwitchPrefabId;
         }
-        internal static float BrightnessOf(GadgetSwitch controller, GadgetBase recipient)
+        internal static float BrightnessOf(GadgetSwitch controller, GadgetBase recipient, bool analog)
         {
             if (controller == null) return 1f;
+            if (analog)
+            {
+                // Preserve the native float output and power gating. Native
+                // range comparisons clamp infinities but allow NaN through.
+                float value = controller.OutputValueOf(recipient);
+                return float.IsNaN(value) ? 0f : Mathf.Clamp01(value);
+            }
             if (controller is AlternatingController alternating)
             {
                 // Native OutputValueOf rotates through subscribers on a timer.
@@ -38,6 +48,12 @@ namespace RailwaySafetyGadgets
             // A standard controller is strictly OFF/ON, never an analogue dimmer.
             return controller.OutputValueOf(recipient) > 0f ? 1f : 0f;
         }
+        internal static bool IsAnalogController(GadgetSwitch controller)
+        {
+            if (controller == null || controller is AlternatingController || controller.GadgetItem == null) return false;
+            var spec = controller.GadgetItem.GetComponent<InventoryItemSpec>();
+            return spec != null && spec.ItemPrefabName == NativeAssets.AnalogPrefabId;
+        }
         internal static bool IsCabModeSwitch(GadgetSwitch controller)
         {
             if (controller == null || controller is AlternatingController || controller.GadgetItem == null) return false;
@@ -46,7 +62,7 @@ namespace RailwaySafetyGadgets
         }
         protected override bool CanBeLinked { get { return linked == null; } }
         protected override bool CanLinkTo(GadgetWiringModule.WireLinkPort port)
-        { return base.CanLinkTo(port) && Accepts(port.owner as GadgetSwitch); }
+        { return base.CanLinkTo(port) && Accepts(port.owner as GadgetSwitch) && IsCabModeSwitch(port.owner as GadgetSwitch) == mode; }
         protected override bool IsLinkedTo(GadgetWiringModule.WireLinkPort port) { return port != null && linked == port; }
         protected override void Add(GadgetWiringModule.WireLinkPort port) { linked = port; }
         protected override void Remove(GadgetWiringModule.WireLinkPort port) { if (linked == port) linked = null; }
@@ -89,8 +105,8 @@ namespace RailwaySafetyGadgets
             if (retained == null) return;
             src = (JObject)src.DeepClone(); src["links"] = retained;
             if (removedIncompatible) Main.LogOnce("unsupported-controller-links", Texts.Pick(
-                "Удалено сохранённое несовместимое соединение гаджета. Подключите кнопку, переключатель или чередующийся контроллер яркости.",
-                "Removed an incompatible saved gadget connection. Connect a button, switch or alternating brightness controller."));
+                "Удалено сохранённое несовместимое соединение гаджета. Подключите кнопку, переключатель, аналоговый или чередующийся контроллер яркости.",
+                "Removed an incompatible saved gadget connection. Connect a button, switch, analog or alternating brightness controller."));
         }
     }
 }

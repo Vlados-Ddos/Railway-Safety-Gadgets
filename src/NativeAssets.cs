@@ -11,7 +11,7 @@ namespace RailwaySafetyGadgets
         private static readonly Dictionary<string, GameObject> Prefabs = new Dictionary<string, GameObject>();
         internal static AudioClip Caution, Stop, Change, Alarm, Button;
         internal static string ButtonPrefabId, SwitchPrefabId;
-        internal static string RotarySwitchPrefabId, AlternatingPrefabId;
+        internal static string RotarySwitchPrefabId, AlternatingPrefabId, AnalogPrefabId;
         private static bool loaded;
 
         internal static GameObject Prefab(string resource)
@@ -36,6 +36,7 @@ namespace RailwaySafetyGadgets
             SwitchPrefabId = Prefab("switchlever").GetComponent<InventoryItemSpec>().ItemPrefabName;
             RotarySwitchPrefabId = Prefab("switchrotary").GetComponent<InventoryItemSpec>().ItemPrefabName;
             AlternatingPrefabId = Prefab("switchalternating").GetComponent<InventoryItemSpec>().ItemPrefabName;
+            AnalogPrefabId = Prefab("switchanalog").GetComponent<InventoryItemSpec>().ItemPrefabName;
             var clips = Resources.FindObjectsOfTypeAll<AudioClip>();
             Caution = Find(clips, "GadgetWarning_BrakeCylinderLEDBar_Blink");
             Stop = Find(clips, "GadgetWarning_WirelessMUController_Conflict");

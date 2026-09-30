@@ -2,7 +2,7 @@
   "Id": "RailwaySafetyGadgets",
   "DisplayName": "Railway Safety Gadgets",
   "Author": "7Vlad7",
-  "Version": "1.1.0",
+  "Version": "1.1.1",
   "ManagerVersion": "0.27.3",
   "AssemblyName": "RailwaySafetyGadgets.dll",
   "EntryMethod": "RailwaySafetyGadgets.Main.Load",

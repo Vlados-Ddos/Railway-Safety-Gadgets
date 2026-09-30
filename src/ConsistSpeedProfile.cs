@@ -30,10 +30,12 @@ namespace RailwaySafetyGadgets
         private readonly ConsistNextLimit nextProfile = new ConsistNextLimit();
         private readonly List<SpeedPoint> scratch = new List<SpeedPoint>();
         private readonly Dictionary<RailTrack, IEnumerable<SpeedPoint>> queryPoints = new Dictionary<RailTrack, IEnumerable<SpeedPoint>>();
-        private struct GradeSegment { internal double Start, End, Slope; }
+        private struct GradeSegment { internal double Start, End, Slope, Height; }
         private readonly Dictionary<RailTrack, GradeSegment[]> grades = new Dictionary<RailTrack, GradeSegment[]>();
         private readonly List<GradeSegment> routeGrades = new List<GradeSegment>();
-        private readonly Dictionary<BrakeSystem, bool> readyBrakes = new Dictionary<BrakeSystem, bool>();
+        private readonly Dictionary<BrakeSystem, double> readyBrakes = new Dictionary<BrakeSystem, double>();
+        private struct MassPoint { internal double Position, Mass, Height, Slope; }
+        private readonly List<MassPoint> massPoints = new List<MassPoint>();
         private readonly HashSet<BrakeSystem> visitingBrakes = new HashSet<BrakeSystem>();
         private readonly SteppedSpeedDisplay steps = new SteppedSpeedDisplay();
         private readonly Func<RailTrack, IEnumerable<SpeedPoint>> readPoints;
@@ -59,8 +61,12 @@ namespace RailwaySafetyGadgets
         internal int QueryCount { get { return queries; } }
         internal string Status { get; private set; }
         internal double LengthMetres { get; private set; }
+        public double ConsistMassKg { get; private set; }
+        public double ConnectedBrakeForce { get; private set; }
+        internal double AppliedBrakeForce { get; private set; }
+        internal double OpposingTractionForce { get; private set; }
 
-        internal void Reset() { NextTarget = null; NextTargetAtTail = false; nextProfile.Clear(); occupiedLimits.Clear(); TrackLimit = Display = NextLimit = lastConfirmedLimit = ClubUTargetLimit = null; Permitted = null; ForgetCurve(); forecastRoute.Clear(); CurveTarget = null; LeadingEnd = default(TrackPosition<RailTrack>); BrakeDataStatus = "position unavailable"; Status = "Consist position unavailable; native limit fallback"; ClubUCurrentSpeedKmh = ClubUDeceleration = 0; ClubUTargetDistance = ClubURequiredBrakingDistance = double.PositiveInfinity; CurveAvailable = WholeConsistAvailable = false; steps.Reset(); dirty = true; lastDirection = 0; }
+        internal void Reset() { ConsistMassKg=ConnectedBrakeForce=AppliedBrakeForce=OpposingTractionForce=0; massPoints.Clear(); NextTarget = null; NextTargetAtTail = false; nextProfile.Clear(); occupiedLimits.Clear(); TrackLimit = Display = NextLimit = lastConfirmedLimit = ClubUTargetLimit = null; Permitted = null; ForgetCurve(); forecastRoute.Clear(); CurveTarget = null; LeadingEnd = default(TrackPosition<RailTrack>); BrakeDataStatus = "position unavailable"; Status = "Consist position unavailable; native limit fallback"; ClubUCurrentSpeedKmh = ClubUDeceleration = 0; ClubUTargetDistance = ClubURequiredBrakingDistance = double.PositiveInfinity; CurveAvailable = WholeConsistAvailable = false; steps.Reset(); dirty = true; lastDirection = 0; }
         public void Dispose()
         {
             if (subscribed) Trainset.TrainsetsChanged -= Changed;
@@ -85,6 +91,7 @@ namespace RailwaySafetyGadgets
             if (!dirty) return front != null && rear != null;
             structureRebuilds++;
             if (owner != car) { if (owner != null) owner.OnRerailed -= Reset; car.OnRerailed += Reset; }
+            ConsistMassKg=ConnectedBrakeForce=AppliedBrakeForce=OpposingTractionForce=0; massPoints.Clear();
             owner = car; set = car.trainset; cars.Clear(); length = 0; front = rear = null;
             lastConfirmedLimit = null; ForgetCurve(); forecastRoute.Clear(); steps.Reset();
             if (set == null) cars.Add(car); else cars.AddRange(set.cars);
@@ -142,102 +149,240 @@ namespace RailwaySafetyGadgets
             }
             grades[track] = cached; return cached;
         }
-        private double ReadGrades(List<RouteLeg<RailTrack>> route, bool collect, double until = double.PositiveInfinity)
+        private bool AppendGrades(List<RouteLeg<RailTrack>> route, double offset, double until)
         {
-            double worst = 0;
-            if (collect) routeGrades.Clear();
             foreach (var leg in route)
             {
                 if (leg.Distance >= until) break;
                 var sections = TrackGrades(leg.Track);
                 if (sections == null)
                 {
-                    if (!collect) return double.NaN;
-                    routeGrades.Add(new GradeSegment { Start = leg.Distance, End = leg.DistanceAt(leg.End), Slope = double.NaN });
+                    // Unknown geometry beyond an earlier target must not erase
+                    // that known curve. Height remains unknown after this gap.
+                    routeGrades.Add(new GradeSegment { Start=offset+leg.Distance,
+                        End=offset+Math.Min(until,leg.DistanceAt(leg.End)), Slope=double.NaN, Height=double.NaN });
                     continue;
                 }
-                double start = Math.Min(leg.Start, leg.End), end = Math.Max(leg.Start, leg.End);
-                // Cached spans are ordered. Skip geometry outside this leg in
-                // logarithmic time, retaining every overlapping native segment.
+                double low = Math.Min(leg.Start, leg.End), high = Math.Max(leg.Start, leg.End);
                 int lo = 0, hi = sections.Length;
-                while (lo < hi) { int mid = lo + (hi - lo) / 2; if (sections[mid].End <= start) lo = mid + 1; else hi = mid; }
+                while (lo < hi) { int mid = lo + (hi - lo) / 2; if (sections[mid].End <= low) lo = mid + 1; else hi = mid; }
                 int first = lo; hi = sections.Length;
-                while (lo < hi) { int mid = lo + (hi - lo) / 2; if (sections[mid].Start < end) lo = mid + 1; else hi = mid; }
+                while (lo < hi) { int mid = lo + (hi - lo) / 2; if (sections[mid].Start < high) lo = mid + 1; else hi = mid; }
                 int stop = lo;
                 for (int n = first; n < stop; n++)
                 {
                     var g = sections[leg.Direction > 0 ? n : stop - 1 - (n - first)];
-                    double low = Math.Max(g.Start, Math.Min(leg.Start, leg.End));
-                    double high = Math.Min(g.End, Math.Max(leg.Start, leg.End));
-                    if (high <= low) continue;
-                    if (leg.DistanceAt(leg.Direction > 0 ? low : high) >= until) break;
-                    double downhill = Math.Max(0, -g.Slope * leg.Direction);
-                    worst = Math.Max(worst, downhill);
-                    if (collect) routeGrades.Add(new GradeSegment { Start = leg.DistanceAt(leg.Direction > 0 ? low : high),
-                        End = leg.DistanceAt(leg.Direction > 0 ? high : low), Slope = downhill });
+                    double a = Math.Max(g.Start, low), b = Math.Min(g.End, high);
+                    double from = offset + leg.DistanceAt(leg.Direction > 0 ? a : b);
+                    double to = Math.Min(offset + until, offset + leg.DistanceAt(leg.Direction > 0 ? b : a));
+                    if (to <= from) continue;
+                    double height = 0;
+                    if (routeGrades.Count > 0)
+                    {
+                        var previous = routeGrades[routeGrades.Count - 1];
+                        if (Math.Abs(previous.End - from) > .01) return false;
+                        height = previous.Height + (previous.End - previous.Start) * previous.Slope;
+                    }
+                    routeGrades.Add(new GradeSegment { Start = from, End = to, Slope = g.Slope * leg.Direction, Height = height });
                 }
             }
-            return worst;
+            return routeGrades.Count > 0;
         }
-        private void ApplyTargetGrades(double levelDeceleration, double occupiedDownhill)
+        private double BogiePosition(Bogie bogie)
         {
-            int section = 0; double worst = occupiedDownhill;
-            for (int i = 0; i < limits.Count; i++)
+            if (bogie == null || bogie.traveller == null) return double.NaN;
+            foreach (var leg in occupied)
+                if (leg.Track == bogie.track && leg.Contains(bogie.traveller.Span)) return leg.DistanceAt(bogie.traveller.Span);
+            return double.NaN;
+        }
+        private bool PrepareGrades(List<RouteLeg<RailTrack>> ahead, double measuredLength, double until)
+        {
+            routeGrades.Clear(); massPoints.Clear();
+            if ((measuredLength > .001 && !AppendGrades(occupied, 0, measuredLength)) || !AppendGrades(ahead, measuredLength, until)) return false;
+            foreach (var car in cars)
             {
-                var limit = limits[i];
-                while (section < routeGrades.Count && routeGrades[section].Start < limit.Distance)
-                    worst = Math.Max(worst, routeGrades[section++].Slope);
-                // Apply the planning cap AFTER subtracting gravity. A remote
-                // descent beyond this target cannot cancel an earlier curve.
-                limit.Deceleration = Math.Min(.35, levelDeceleration - Math.Abs(Physics.gravity.y) * worst);
-                limits[i] = limit;
+                double mass = car.massController.TotalMass;
+                double bodyPosition = (BogiePosition(car.FrontBogie) + BogiePosition(car.RearBogie)) * .5;
+                if (car.rb == null || !ProtectionPolicy.Finite(car.rb.mass) || car.rb.mass <= 0 ||
+                    !ProtectionPolicy.Finite(mass) || mass <= 0) return false;
+                double rigidMass = car.rb.mass;
+                foreach (var bogie in car.Bogies)
+                {
+                    if (bogie == null || bogie.rb == null || !OnRoute(bogie, occupied) ||
+                        !ProtectionPolicy.Finite(bogie.rb.mass) || bogie.rb.mass <= 0) return false;
+                    rigidMass += bogie.rb.mass;
+                }
+                if (!ProtectionPolicy.Finite(bodyPosition) || rigidMass <= 0) return false;
+                if (!AddMassPoint(bodyPosition, mass * car.rb.mass / rigidMass)) return false;
+                foreach (var bogie in car.Bogies)
+                {
+                    double position = BogiePosition(bogie);
+                    if (!ProtectionPolicy.Finite(position)) return false;
+                    if (!AddMassPoint(position, mass * bogie.rb.mass / rigidMass)) return false;
+                }
             }
+            return true;
         }
-        private bool BrakeReady(BrakeSystem brake)
+        private bool AddMassPoint(double position, double mass)
         {
-            if (brake == null || !ProtectionPolicy.Finite(brake.controlReservoirPressure) || brake.controlReservoirPressure < 4.5f) return false;
-            bool ready;
-            if (readyBrakes.TryGetValue(brake, out ready)) return ready;
-            if (!visitingBrakes.Add(brake)) return false;
-            if (brake.hasCompressor) ready = ProtectionPolicy.Finite(brake.mainReservoirPressure) && brake.mainReservoirPressure >= 4.5f;
-            else if (brake.brakeCylinderPressureCalculation == BrakeSystem.BrakeCylinderPressureCalculation.Regular)
-                ready = ProtectionPolicy.Finite(brake.auxReservoirPressure) && brake.auxReservoirPressure >= 4.5f;
-            else
+            if (!GradeAt(position, out double height, out double slope)) return false;
+            // Starting heights are identical for every target in this query.
+            massPoints.Add(new MassPoint { Position=position, Mass=mass, Height=height, Slope=slope });
+            return true;
+        }
+        private double ReadTraction()
+        {
+            double total=0;
+            foreach(var car in cars)
+            {
+                var sim=car.SimController;
+                var drive=sim == null ? null : sim.drivingForce;
+                if(drive == null || !drive.enabled) continue;
+                double force=drive.generatedForce;
+                var adhesion=car.adhesionController;
+                if(adhesion != null)
+                {
+                    if(adhesion.wheelSlide > 0) continue; // native DrivingForce suppresses traction
+                    if(adhesion.wheelslipController.IsSome(out var slip))
+                        force=Math.Max(-slip.TotalForceLimit,Math.Min(slip.TotalForceLimit,force));
+                }
+                // Oppositely oriented locomotives use their local force sign.
+                // Credit no future dynamic/reverse braking; retain traction
+                // opposing the selected route until the driver actually removes it.
+                double orientation=BogiePosition(car.FrontBogie)-BogiePosition(car.RearBogie);
+                if(!ProtectionPolicy.Finite(force) || !ProtectionPolicy.Finite(orientation)) return double.NaN;
+                total+=Math.Max(0,force*Math.Sign(orientation));
+            }
+            return total;
+        }
+        private bool GradeAt(double position, out double height, out double slope)
+        {
+            height = slope = double.NaN;
+            int lo = 0, hi = routeGrades.Count;
+            while (lo < hi) { int mid = lo + (hi - lo) / 2; if (routeGrades[mid].End < position) lo = mid + 1; else hi = mid; }
+            if (lo >= routeGrades.Count) return false;
+            var section = routeGrades[lo];
+            if (position < section.Start - .001) return false;
+            slope = section.Slope; height = section.Height + (position - section.Start) * slope;
+            return ProtectionPolicy.Finite(height) && ProtectionPolicy.Finite(slope);
+        }
+        private double EffectiveDeceleration(double level, double distance)
+        {
+            // Potential-energy change of every mass point along the selected
+            // route. A short dip is not assigned to the entire train/distance;
+            // uphill work is retained. At zero distance use the current profile.
+            double grade = 0;
+            foreach (var point in massPoints)
+            {
+                double slope = point.Slope;
+                if (distance > 0)
+                {
+                    if (!GradeAt(point.Position + distance, out double endHeight, out slope)) return double.NaN;
+                    slope = (endHeight - point.Height) / distance;
+                }
+                grade += point.Mass * slope;
+            }
+            return level + Math.Abs(Physics.gravity.y) * grade / ConsistMassKg;
+        }
+        // Settled full-service cylinder factor from native pressure limits.
+        // This does not integrate pressure propagation or invent a fixed delay.
+        private double ServiceFactor(BrakeSystem brake, double pipePressure)
+        {
+            if (brake == null) return 0;
+            if (readyBrakes.TryGetValue(brake, out double cached)) return cached;
+            if (!visitingBrakes.Add(brake)) return 0;
+            double factor = 0;
+            if (!ProtectionPolicy.Finite(brake.controlReservoirPressure) ||
+                !ProtectionPolicy.Finite(brake.brakeCylinderPressureUnsmoothed)) factor = double.NaN;
+            else if (!brake.controlReservoirPressureReleased)
             {
                 var mode = brake.brakeCylinderPressureCalculation;
-                ready = (mode == BrakeSystem.BrakeCylinderPressureCalculation.CopyFront || mode == BrakeSystem.BrakeCylinderPressureCalculation.CopyMax) &&
-                    brake.Front.IsFullyConnected && BrakeReady(brake.Front.connectedTo.parentSystem);
-                if (!ready && (mode == BrakeSystem.BrakeCylinderPressureCalculation.CopyRear || mode == BrakeSystem.BrakeCylinderPressureCalculation.CopyMax))
-                    ready = brake.Rear.IsFullyConnected && BrakeReady(brake.Rear.connectedTo.parentSystem);
+                if (mode != BrakeSystem.BrakeCylinderPressureCalculation.Regular)
+                {
+                    if ((mode == BrakeSystem.BrakeCylinderPressureCalculation.CopyFront || mode == BrakeSystem.BrakeCylinderPressureCalculation.CopyMax) && brake.Front.IsFullyConnected)
+                        factor = ServiceFactor(brake.Front.connectedTo.parentSystem, pipePressure);
+                    if ((mode == BrakeSystem.BrakeCylinderPressureCalculation.CopyRear || mode == BrakeSystem.BrakeCylinderPressureCalculation.CopyMax) && brake.Rear.IsFullyConnected)
+                        factor = Math.Max(factor, ServiceFactor(brake.Rear.connectedTo.parentSystem, pipePressure));
+                }
+                else
+                {
+                    double drop = brake.controlReservoirPressure - pipePressure;
+                    double target = drop < BrakeSystemConsts.INITIAL_APPLICATION_PRESSURE_DROP ? 1 :
+                        1.5 + 3 * Math.Max(0, Math.Min(1, (drop - BrakeSystemConsts.INITIAL_APPLICATION_PRESSURE_DROP) /
+                        (BrakeSystemConsts.FULL_APPLICATION_PRESSURE_DROP - BrakeSystemConsts.INITIAL_APPLICATION_PRESSURE_DROP)));
+                    double supply = brake.hasCompressor ? brake.mainReservoirPressure : brake.auxReservoirPressure;
+                    double volume = brake.hasCompressor ? brake.mainResVolume : BrakeSystemConsts.AUX_RES_VOLUME;
+                    // Available air mass bounds the attainable cylinder pressure;
+                    // no credit for future compressor work or reservoir recharge.
+                    if (!ProtectionPolicy.Finite(supply) || !ProtectionPolicy.Finite(volume) || volume <= 0) factor = double.NaN;
+                    else
+                    {
+                        double equilibrium = (supply * volume + brake.brakeCylinderPressureUnsmoothed * BrakeSystemConsts.CYLINDER_VOLUME) /
+                            (volume + BrakeSystemConsts.CYLINDER_VOLUME);
+                        double cylinder = Math.Min(target, Math.Max(brake.brakeCylinderPressureUnsmoothed, equilibrium));
+                        factor = Math.Max(0, Math.Min(1, (cylinder - BrakeSystemConsts.MIN_APPLICATION_PRESSURE) /
+                            (BrakeSystemConsts.MAX_BRAKE_CYLINDER_PRESSURE - BrakeSystemConsts.MIN_APPLICATION_PRESSURE)));
+                    }
+                }
             }
-            visitingBrakes.Remove(brake); readyBrakes[brake] = ready; return ready;
+            visitingBrakes.Remove(brake); readyBrakes[brake] = factor; return factor;
         }
         private double BrakeDeceleration()
         {
             double force = 0, mass = 0;
+            ConsistMassKg = ConnectedBrakeForce = AppliedBrakeForce = OpposingTractionForce = 0;
             readyBrakes.Clear(); visitingBrakes.Clear();
-            var brakeSet = owner.brakeSystem == null ? null : owner.brakeSystem.brakeset;
+            var command = owner.brakeSystem;
+            var brakeSet = command == null ? null : command.brakeset;
             BrakeDataStatus = "ready";
             if (brakeSet == null) { BrakeDataStatus = "missing brake set"; return 0; }
-            // Native SimulateTrainBrake returns when this field is FALSE.
-            // Despite its name, TRUE means the controlling valve is cut IN.
-            if (!owner.brakeSystem.trainBrakeCutout) { BrakeDataStatus = "train brake valve cut out"; return 0; }
+            if (!command.trainBrakeCutout) { BrakeDataStatus = "train brake valve cut out"; return 0; }
+            double commandFactor = command.trainBrakeCurve == null ? 1 : command.trainBrakeCurve.Evaluate(1);
+            if (!ProtectionPolicy.Finite(commandFactor)) { BrakeDataStatus = "invalid brake command curve"; return 0; }
+            double targetPipe = command.selfLappingController ? 6 - 1.5 * Math.Max(0, Math.Min(1, commandFactor)) : 4.5;
             foreach (var car in cars)
             {
-                if (car.rb == null || car.FrontBogie == null || car.RearBogie == null || car.FrontBogie.rb == null || car.RearBogie.rb == null)
-                { BrakeDataStatus = "missing body/bogie mass"; return 0; }
-                mass += car.rb.mass + car.FrontBogie.rb.mass + car.RearBogie.rb.mass;
+                if (car == null || car.massController == null || car.Bogies == null || car.Bogies.Length == 0)
+                { BrakeDataStatus = "invalid native vehicle mass"; return 0; }
+                double carMass = car.massController.TotalMass;
+                if (!ProtectionPolicy.Finite(carMass) || carMass <= 0) { BrakeDataStatus = "invalid native vehicle mass"; return 0; }
+                mass += carMass;
+                double capacity = 0;
+                foreach (var bogie in car.Bogies)
+                {
+                    if (bogie == null || bogie.rb == null || !ProtectionPolicy.Finite(bogie.rb.mass) || bogie.rb.mass <= 0 ||
+                        !ProtectionPolicy.Finite(bogie.maxBrakingForcePerKg) || bogie.maxBrakingForcePerKg < 0)
+                    { BrakeDataStatus = "invalid native bogie force"; return 0; }
+                    capacity += bogie.maxBrakingForcePerKg * bogie.rb.mass;
+                }
                 var b = car.brakeSystem;
-                // Disconnected/unready vehicles contribute mass, not fictitious
-                // brake force. CopyFront/Rear/Max use their real supplying valve.
-                if (b == null || b.brakeset != brakeSet || b.heatController == null || !BrakeReady(b)) continue;
-                force += (car.FrontBogie.maxBrakingForcePerKg * car.FrontBogie.rb.mass +
-                    car.RearBogie.maxBrakingForcePerKg * car.RearBogie.rb.mass) * Math.Max(0, Math.Min(1, b.heatController.overheatReductionFactor));
+                if (b == null) continue; // unbraked cars still contribute mass
+                if (b.heatController == null || !ProtectionPolicy.Finite(b.heatController.overheatReductionFactor) || !ProtectionPolicy.Finite(b.brakingFactor))
+                { BrakeDataStatus = "invalid native brake factor"; return 0; }
+                double heat = Math.Max(0, Math.Min(1, b.heatController.overheatReductionFactor));
+                double applied = Math.Max(0, b.brakingFactor); // native factor already includes heat
+                double service = b.brakeset == brakeSet ? ServiceFactor(b, targetPipe) * heat : 0;
+                if (!ProtectionPolicy.Finite(service)) { BrakeDataStatus = "invalid native brake pressure"; return 0; }
+                var adhesion = car.adhesionController;
+                if (adhesion != null)
+                {
+                    if (!ProtectionPolicy.Finite(adhesion.wheelSlide)) { BrakeDataStatus = "invalid native adhesion"; return 0; }
+                    double slide = Math.Max(0, Math.Min(1, adhesion.wheelSlide));
+                    applied = applied * (1 - slide) + .4 * slide;
+                    // Native sliding blends towards 40% of capacity. Do not
+                    // credit an increase for an unavailable/overheated brake.
+                    service = Math.Min(service, service * (1 - slide) + .4 * slide);
+                    if (adhesion.wheelslipController.IsSome(out var slip) && slip.wheelslip > 0) service = applied = 0;
+                }
+                AppliedBrakeForce += capacity * applied;
+                force += capacity * service;
             }
             if (mass <= 0 || !ProtectionPolicy.Finite(mass) || !ProtectionPolicy.Finite(force))
             { BrakeDataStatus = "invalid mass/brake force"; return 0; }
+            ConsistMassKg = mass; ConnectedBrakeForce = force;
             if (force <= 0) BrakeDataStatus = "no charged connected brakes";
-            return .35 * force / mass;
+            // Native Newtons / total kilograms. No planning fraction or cap.
+            return force / mass;
         }
         private void Fallback(int? limit, bool enableCurve)
         {
@@ -332,7 +477,7 @@ namespace RailwaySafetyGadgets
             NextLimit = null; NextTarget = null; NextTargetAtTail = false;
             if (direction != lastDirection) { lastDirection = direction; directionInvalidations++; lastConfirmedLimit = null; ForgetCurve(); forecastRoute.Clear(); steps.Reset(); }
             if (car != null && (owner != car || !ReferenceEquals(set, car.trainset) || dirty)) { lastConfirmedLimit = null; ForgetCurve(); }
-            if (!enableCurve) ForgetCurve();
+            if (!enableCurve) { ForgetCurve(); ConsistMassKg=ConnectedBrakeForce=AppliedBrakeForce=OpposingTractionForce=0; massPoints.Clear(); }
             // A temporarily unresolvable occupied route cannot increase a
             // previously confirmed lower tail limit on the same consist/direction.
             int? fallback = legacyCurrent;
@@ -422,26 +567,40 @@ namespace RailwaySafetyGadgets
                 BrakeDataStatus = "not required"; Status = "No reduction in known profile; whole-consist limit"; return;
             }
             double levelDeceleration = BrakeDeceleration();
-            double occupiedDownhill = ReadGrades(occupied, false);
-            ReadGrades(ahead, true, lastReduction); ApplyTargetGrades(levelDeceleration, occupiedDownhill);
-            double deceleration = Math.Min(.35, levelDeceleration - Math.Abs(Physics.gravity.y) * occupiedDownhill);
+            if (ConsistMassKg <= 0 || ConnectedBrakeForce <= 0)
+            { Status = "Curve unavailable: brake capability; whole-consist limit"; return; }
+            bool gradeKnown = PrepareGrades(ahead, measured, lastReduction);
+            OpposingTractionForce = gradeKnown ? ReadTraction() : double.NaN;
+            levelDeceleration -= OpposingTractionForce / ConsistMassKg;
+            double deceleration = gradeKnown ? EffectiveDeceleration(levelDeceleration, 0) : double.NaN;
+            for (int i = 0; i < limits.Count; i++)
+            {
+                var boundary = limits[i];
+                if (SpeedEnvelope.IsReduction(limits, i, wholeLimit))
+                    boundary.Deceleration = gradeKnown ? EffectiveDeceleration(levelDeceleration, boundary.Distance) : double.NaN;
+                limits[i] = boundary;
+            }
             ClubUDeceleration = deceleration;
             SpeedEnvelope.FirstReduction(wholeLimit, limits, out var target, out var targetDistance, out var targetDeceleration);
             foreach (var boundary in limits)
                 if (boundary.Distance == targetDistance && boundary.Limit == target) { CurveTarget = boundary; break; }
             ClubUTargetLimit = target; ClubUTargetDistance = targetDistance;
             if (targetDeceleration.HasValue) ClubUDeceleration = targetDeceleration.Value;
-            if (!ProtectionPolicy.Finite(ClubUDeceleration)) BrakeDataStatus = "track grade unavailable";
-            if (BrakeDataStatus == "ready" && ClubUDeceleration < .05) BrakeDataStatus = "insufficient deceleration after grade allowance";
+            if (!gradeKnown || (ConsistMassKg > 0 && !ProtectionPolicy.Finite(ClubUDeceleration))) BrakeDataStatus = "track grade unavailable";
+            if (BrakeDataStatus == "ready" && ClubUDeceleration <= 0) BrakeDataStatus = "insufficient service deceleration";
+            // The driver envelope assumes service braking is established.
+            // The automatic-brake warning is not an air-brake response delay.
+            const double planningResponseSeconds = 0;
             if (target.HasValue)
                 ClubURequiredBrakingDistance = SpeedEnvelope.BrakingDistance(ClubUCurrentSpeedKmh, target.Value,
-                    targetDeceleration ?? deceleration, warningSeconds + AutomaticBrakeWarning.MaxManualExtensionSeconds);
+                    targetDeceleration ?? deceleration, planningResponseSeconds);
             var last = ahead[ahead.Count - 1];
-            // Exactly the existing warning plus its bounded manual extension.
-            // No additional arbitrary time allowance is introduced here.
+            // Use the same single planning interval for the exact curve. No
+            // additional warning-state grace period or arbitrary margin is
+            // introduced here.
             bool complete; int controllingBoundary;
             var curve = SpeedEnvelope.Calculate(wholeLimit, limits, deceleration,
-                warningSeconds + AutomaticBrakeWarning.MaxManualExtensionSeconds, last.DistanceAt(last.End), ClubUCurrentSpeedKmh, out complete, out controllingBoundary);
+                planningResponseSeconds, last.DistanceAt(last.End), ClubUCurrentSpeedKmh, out complete, out controllingBoundary);
             if (!curve.HasValue) { Status = "Curve unavailable: route/brake data; whole-consist limit"; return; }
             if (!complete && lastCurve.HasValue && lastCurve.Value < curve.Value) curve = lastCurve;
             else if (controllingBoundary >= 0) { lastCurve = curve; heldTarget = limits[controllingBoundary]; }

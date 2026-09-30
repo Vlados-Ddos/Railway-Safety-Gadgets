@@ -191,7 +191,24 @@ namespace RailwaySafetyGadgets
             Settings.SignalVolume = VolumeSlider(Texts.Name(0, Texts.Russian), Settings.SignalVolume);
             Settings.SpeedVolume = VolumeSlider(Texts.Name(1, Texts.Russian), Settings.SpeedVolume);
             Settings.BrakeVolume = VolumeSlider(Texts.Name(2, Texts.Russian), Settings.BrakeVolume);
+            DrawHelp();
         }
+        private static bool showHelp;
+        private static GUIStyle helpStyle;
+        private static void DrawHelp()
+        {
+            showHelp = GUILayout.Toggle(showHelp, Texts.Pick("Справка по гаджетам", "Gadget help"));
+            if (!showHelp) return;
+            if (helpStyle == null) helpStyle = new GUIStyle(GUI.skin.label) { wordWrap = true };
+            bool russian = Texts.Russian;
+            for (int i = 0; i < 3; i++)
+            {
+                GUILayout.Label(Texts.Name(i, russian));
+                GUILayout.Label(Texts.DetailedDescription(i, russian), helpStyle);
+            }
+            foreach (var text in Texts.SettingsHelp(russian)) GUILayout.Label(text, helpStyle);
+        }
+
         private static float VolumeSlider(string name, float value)
         {
             GUILayout.Label(name + Texts.Pick(": громкость ", ": volume ") + Mathf.RoundToInt(value * 100) + "%");

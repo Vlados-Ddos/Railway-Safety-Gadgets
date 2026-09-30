@@ -28,16 +28,18 @@ namespace RailwaySafetyGadgets
         private KeyboardButtonAccess keyboardAccess;
         private GadgetAudio audio;
         private GadgetSwitch externalSwitch;
+        private GadgetSwitch externalModeSwitch;
         private bool controlPortRegistered;
         private float controllerBrightness = 1f;
-        private bool cabModeSwitch, shuntingMode;
-        public bool HasCabModeSwitch { get { return HasExternalControl && cabModeSwitch; } }
+        private bool shuntingMode;
+        private bool analogController;
+        public bool HasCabModeSwitch { get { return externalModeSwitch != null; } }
         public bool ShuntingMode { get { return HasCabModeSwitch && shuntingMode; } }
-        public bool HasModeSwitch { get { return HasExternalControl && cabModeSwitch; } }
+        public bool HasModeSwitch { get { return externalModeSwitch != null; } }
         public bool CurveMode { get { return kind == DeviceKind.Speed && HasModeSwitch && shuntingMode; } }
         public bool SpeedProtection { get { return kind == DeviceKind.Brake && !(HasModeSwitch && shuntingMode); } }
-        public bool HasExternalControl { get { return externalSwitch != null; } }
-        public float Brightness { get { return HasExternalControl ? controllerBrightness : 1f; } }
+        public bool HasExternalControl { get { return externalSwitch != null || externalModeSwitch != null; } }
+        public float Brightness { get { return externalSwitch != null ? controllerBrightness : 1f; } }
         public bool ProtectionEnabled { get { return Brightness > 0f; } }
 
         public bool Operational { get { return IsOnTrainCar && IsLinked && MountedOn != null && PowerState && IsSoldered && ArePlacementRequirementsMet && (kind == DeviceKind.Brake || ProtectionEnabled); } }
@@ -62,6 +64,7 @@ namespace RailwaySafetyGadgets
             // both native Awake orders without registering duplicate ports.
             if (controlPortRegistered) return;
             new ControllerPort(this, SwitchWired, SwitchUnwired);
+            new ControllerPort(this, ModeWired, ModeUnwired, true);
             controlPortRegistered = true;
         }
 
@@ -139,6 +142,7 @@ namespace RailwaySafetyGadgets
             try { if (!UnloadWatcher.isUnloading) wiring.UnwireAll(); }
             catch (Exception ex) { Main.ErrorOnce("destroyed-gadget-wires", ex); }
             if (externalSwitch != null) externalSwitch.OnOutputValueUpdated -= SwitchUpdated;
+            if (externalModeSwitch != null) externalModeSwitch.OnOutputValueUpdated -= ModeUpdated;
             if (button != null) button.Used -= ResetActivation;
             if (service != null) service.Remove(this);
             service = null; Incident.Clear();
@@ -163,6 +167,9 @@ namespace RailwaySafetyGadgets
             if (externalSwitch == sw) return;
             if (externalSwitch != null) externalSwitch.OnOutputValueUpdated -= SwitchUpdated;
             externalSwitch = sw;
+            // Prefab identity is fixed for this connection. Classify once,
+            // not on every knob event or alternating-controller timer tick.
+            analogController = ControllerPort.IsAnalogController(sw);
             if (sw != null) sw.OnOutputValueUpdated += SwitchUpdated;
             SwitchUpdated(sw);
         }
@@ -170,22 +177,38 @@ namespace RailwaySafetyGadgets
         {
             if (externalSwitch != sw) return;
             if (sw != null) sw.OnOutputValueUpdated -= SwitchUpdated;
-            externalSwitch = null; SwitchUpdated(null);
+            externalSwitch = null; analogController = false; SwitchUpdated(null);
         }
         private void SwitchUpdated(GadgetSwitch sw)
         {
-            bool modeSwitch = ControllerPort.IsCabModeSwitch(sw);
-            bool shunting = modeSwitch && sw.OutputValueOf(this) > 0f;
-            bool modeChanged = shuntingMode != shunting || cabModeSwitch != modeSwitch;
-            cabModeSwitch = modeSwitch; shuntingMode = shunting;
-            float value = modeSwitch ? 1f : ControllerPort.BrightnessOf(sw, this);
-            if (controllerBrightness == value && !modeChanged) return;
+            float value = ControllerPort.BrightnessOf(sw, this, analogController);
+            if (controllerBrightness == value) return;
             bool powerChanged = (controllerBrightness > 0f) != (value > 0f);
             controllerBrightness = value;
             // Nonzero dimming only invalidates rendered colours, never route
             // history, RED acknowledgement, deadlines or the calculated curve.
             if (powerChanged && service != null) service.DeviceStateChanged();
-            if (modeChanged && service != null) service.GadgetModeChanged();
+        }
+        private void ModeWired(GadgetSwitch sw)
+        {
+            if (externalModeSwitch == sw) return;
+            if (externalModeSwitch != null) externalModeSwitch.OnOutputValueUpdated -= ModeUpdated;
+            externalModeSwitch = sw;
+            if (sw != null) sw.OnOutputValueUpdated += ModeUpdated;
+            ModeUpdated(sw);
+        }
+        private void ModeUnwired(GadgetSwitch sw)
+        {
+            if (externalModeSwitch != sw) return;
+            if (sw != null) sw.OnOutputValueUpdated -= ModeUpdated;
+            externalModeSwitch = null; ModeUpdated(null);
+        }
+        private void ModeUpdated(GadgetSwitch sw)
+        {
+            bool selected = sw != null && sw.OutputValueOf(this) > 0f;
+            if (shuntingMode == selected) return;
+            shuntingMode = selected;
+            if (service != null) service.GadgetModeChanged();
         }
 
         public override GadgetItem ForceRemove(bool reparentToTrainCar = true)

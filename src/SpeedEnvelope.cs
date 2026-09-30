@@ -183,8 +183,11 @@ namespace RailwaySafetyGadgets
             return current * responseSeconds + (current * current - target * target) / (2 * deceleration);
         }
 
-        // SI units internally. Constant-deceleration planning envelope with a
-        // response interval; deliberately not a replica of DV pneumatic physics.
+        // SI units internally. The displayed CLUB-U envelope is a speed
+        // ceiling at the boundary, so it uses only the service-braking term
+        // v² = v_target² + 2aD. responseSeconds is retained for the route
+        // completeness horizon below; the automatic-brake warning interval is
+        // deliberately not converted into an extra early display reduction.
         public static double? Calculate(int? occupiedLimit, IList<LimitBoundary> ahead, double deceleration,
             double responseSeconds, double coveredDistance)
         {
@@ -209,7 +212,7 @@ namespace RailwaySafetyGadgets
         {
             controllingBoundary = -1;
             complete = false;
-            if (!Valid(occupiedLimit) || !ProtectionPolicy.Finite(deceleration) || deceleration < .05 ||
+            if (!Valid(occupiedLimit) || !ProtectionPolicy.Finite(deceleration) || deceleration <= 0 ||
                 !ProtectionPolicy.Finite(responseSeconds) || responseSeconds < 0 || !ProtectionPolicy.Finite(coveredDistance) || coveredDistance < 0 ||
                 !ProtectionPolicy.Finite(currentSpeedKmh) || currentSpeedKmh < 0 || currentSpeedKmh > 999) return null;
             // The measured speed affects the response horizon. The curve itself
@@ -233,7 +236,7 @@ namespace RailwaySafetyGadgets
                 known = true;
                 if (!IsReduction(ahead, i, occupiedLimit)) continue;
                 double a = p.Deceleration ?? deceleration;
-                if (!ProtectionPolicy.Finite(a) || a < .05)
+                if (!ProtectionPolicy.Finite(a) || a <= 0)
                 {
                     complete = false;
                     return permitted < occupiedLimit.Value ? (double?)permitted : null;
@@ -243,8 +246,11 @@ namespace RailwaySafetyGadgets
                 // Distance is measured from the leading end to the exact speed
                 // boundary, so do not introduce an undocumented fixed offset.
                 double distance = p.Distance;
-                double at = a * responseSeconds;
-                double speedKmh = Math.Max(p.Limit.Value, (Math.Sqrt(at * at + target * target + 2 * a * distance) - at) * 3.6);
+                // Optional response-distance estimates use BrakingDistance
+                // separately. A full warning timer here would leave a nonzero
+                // v_target*T even as the required speed reduction tends to zero,
+                // producing an early plateau at the target speed.
+                double speedKmh = distance == 0 ? p.Limit.Value : Math.Max(p.Limit.Value, Math.Sqrt(target * target + 2 * a * distance) * 3.6);
                 if (speedKmh < permitted) { permitted = speedKmh; controllingBoundary = i; }
             }
             // A short/partly unknown route must not discard an already confirmed
