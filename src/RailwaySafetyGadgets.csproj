@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net48</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Reference Include="Assembly-CSharp"/>
+        <Reference Include="BezierCurves"/>
+        <Reference Include="DV.BrakeSystem"/>
+        <Reference Include="DV.CabControls"/>
+        <Reference Include="DV.CabControls.Spec"/>
+        <Reference Include="DV.Customization"/>
+        <Reference Include="DV.Interaction"/>
+        <Reference Include="DV.PointSet"/>
+        <Reference Include="DV.RailTrack"/>
+        <Reference Include="DV.SignPlacer"/>
+        <Reference Include="DV.Simulation"/>
+        <Reference Include="DV.ThingTypes"/>
+        <Reference Include="DV.Utils"/>
+        <Reference Include="I2.Localization"/>
+        <Reference Include="Newtonsoft.Json"/>
+        <Reference Include="Rewired"/>
+        <Reference Include="Rewired_Core"/>
+        <Reference Include="Rewired_Windows"/>
+        <Reference Include="Signals.Common"/>
+        <Reference Include="Signals.Game"/>
+        <Reference Include="UnityEngine"/>
+        <Reference Include="UnityEngine.AudioModule"/>
+        <Reference Include="UnityEngine.CoreModule"/>
+        <Reference Include="UnityEngine.IMGUIModule"/>
+        <Reference Include="UnityEngine.ImageConversionModule"/>
+        <Reference Include="UnityEngine.PhysicsModule"/>
+        <Reference Include="WorldStreamer"/>
+        <Reference Include="custom_item_components"/>
+        <Reference Include="custom_item_mod"/>
+        <Reference Include="net.smkd.vector3d"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="UnityModManager" Version="0.32.4" PrivateAssets="all"/>
+    </ItemGroup>
+
+</Project>

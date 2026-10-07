@@ -1,0 +1,9 @@
+<Project>
+    <PropertyGroup>
+        <DV>/home/tvardero/.local/share/Steam/steamapps/common/Derail Valley</DV>
+        <DVManaged>$(DV)/DerailValley_Data/Managed/</DVManaged>
+        <DVCustomItemMod>$(DV)/Mods/custom_item_mod/</DVCustomItemMod>
+        <DVSignals>$(DV)/Mods/DVSignals/</DVSignals>
+        <AssemblySearchPaths>$(AssemblySearchPaths);$(DVManaged);$(DVCustomItemMod);$(DVSignals);</AssemblySearchPaths>
+    </PropertyGroup>
+</Project>
