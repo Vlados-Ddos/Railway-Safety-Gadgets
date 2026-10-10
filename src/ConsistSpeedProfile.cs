@@ -398,7 +398,7 @@ namespace RailwaySafetyGadgets
         {
             // Publish once, including early returns/failures. Intermediate native
             // fallback values must never enter the display's increase hysteresis.
-            try { QueryCore(car, direction, legacyCurrent, enableCurve, warningSeconds, currentSpeedKmh, sharedAhead); }
+            try { QueryCore(car, direction, legacyCurrent, enableCurve, currentSpeedKmh, sharedAhead); }
             catch { NextTarget = null; NextLimit = null; throw; }
             finally
             {
@@ -466,7 +466,7 @@ namespace RailwaySafetyGadgets
             }
         }
 
-        private void QueryCore(TrainCar car, int direction, int? legacyCurrent, bool enableCurve, double warningSeconds, double currentSpeedKmh,
+        private void QueryCore(TrainCar car, int direction, int? legacyCurrent, bool enableCurve, double currentSpeedKmh,
             List<RouteLeg<RailTrack>> sharedAhead)
         {
             queries++;

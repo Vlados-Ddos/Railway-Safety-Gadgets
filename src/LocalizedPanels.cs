@@ -91,5 +91,11 @@ namespace RailwaySafetyGadgets
                 Apply(binding, russian);
             }
         }
+
+        internal static void Unregister(Material material)
+        {
+            for (int i = Bindings.Count - 1; i >= 0; i--)
+                if (ReferenceEquals(Bindings[i].Material, material)) Bindings.RemoveAt(i);
+        }
     }
 }

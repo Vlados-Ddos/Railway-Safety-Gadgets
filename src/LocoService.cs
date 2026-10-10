@@ -58,6 +58,29 @@ namespace RailwaySafetyGadgets
             foreach (var service in Services) if (service != null && service.enabled) service.SamplePassage();
         }
 
+        // Native notifications only mark relevant services. One LateUpdate reads
+        // the final state after a burst, without rerunning the speed pipeline.
+        public static void RequestSignalRefresh(RailTrack track)
+        {
+            foreach (var service in Services)
+            {
+                if (service == null || !service.enabled || service.signalRefresh || !service.Has(DeviceKind.Signal)) continue;
+                bool relevant = track == null || (service.car != null && service.car.FrontBogie != null && service.car.FrontBogie.track == track) ||
+                    (service.retainedRed != null && service.retainedRedPosition.Track == track);
+                if (!relevant && service.forbiddenEntry != null && service.forbiddenEntry.Valid)
+                    relevant = service.forbiddenEntry.Track == track;
+                if (!relevant) foreach (var leg in service.aheadBuffer)
+                    if (leg.Track == track) { relevant = true; break; }
+                if (relevant)
+                {
+                    service.signalRefresh = true;
+#if RSG_LSR_TRACE
+                    Main.Log("[LSR] Invalidate/coalesced event; current=" + service.NextSignal?.Name);
+#endif
+                }
+            }
+        }
+
         public static IEnumerable<LocoService> All { get { return Services; } }
         private readonly List<SafetyGadget> gadgets = new List<SafetyGadget>();
         private readonly List<RouteLeg<RailTrack>> aheadBuffer = new List<RouteLeg<RailTrack>>();
@@ -69,13 +92,14 @@ namespace RailwaySafetyGadgets
         private static readonly Comparison<PassedSignal> PassageOrder = (a, b) =>
         { int distance = a.Distance.CompareTo(b.Distance); return distance != 0 ? distance : a.Order.CompareTo(b.Order); };
         private TrainCar car;
-        private bool history, sampling, deadlineRead;
+        private bool history, sampling, deadlineRead, signalRefresh;
         private readonly ConfirmedDirection confirmedDirection = new ConfirmedDirection();
         private bool curveMode, speedProtection = true, pendingPassage, turnHistory;
         private TrackPosition<RailTrack> turnPosition;
         private Vector3 turnAbsolute;
         private float turnTime;
-        private ISignalReading passedStop, retainedRed;
+        private ISignalReading retainedRed;
+        private TrackPosition<RailTrack> retainedRedPosition;
         public int ActiveDirection { get { return direction; } }
         public bool CurveMode { get { return curveMode; } }
         public bool SpeedProtection { get { return speedProtection; } }
@@ -122,11 +146,24 @@ namespace RailwaySafetyGadgets
         public int DeviceCount { get { return gadgets.Count; } }
 
         private void Awake() { car = GetComponent<TrainCar>(); if (car != null) car.OnRerailed += ResetHistory; Services.Add(this); enabled = false; }
-        private void OnDestroy() { ClearDistance(); if (car != null) car.OnRerailed -= ResetHistory; brakeWarning.Reset(); brakeLock.Dispose(); speedProfile.Dispose(); curveWarnings.Reset(); Services.Remove(this); }
-        private void OnDisable() { ClearDistance(); history = turnHistory = pendingPassage = false; passedStop = retainedRed = forbiddenEntry = null; brakeWarning.Reset(); brakeLock.Dispose(); speedProfile.Dispose(); curveWarnings.Reset(); manualBrake.Reset(); }
+        private void OnDestroy()
+        {
+            OnDisable();
+            if (car != null) car.OnRerailed -= ResetHistory;
+            Services.Remove(this);
+        }
+        private void OnDisable()
+        {
+            signalRefresh = false; history = turnHistory = pendingPassage = false;
+            ClearRetainedRed(); forbiddenEntry = null;
+            brakeWarning.Reset(); brakeLock.Dispose(); speedProfile.Dispose(); curveWarnings.Reset(); manualBrake.Reset();
+            ResetReadings();
+            previous = turnPosition = default(TrackPosition<RailTrack>);
+            aheadBuffer.Clear(); aheadVisited.Clear(); sweptBuffer.Clear(); sweptVisited.Clear(); passedSignals.Clear();
+        }
         public void Add(SafetyGadget gadget) { if (!gadgets.Contains(gadget)) gadgets.Add(gadget); enabled = gadgets.Count > 0; DeviceStateChanged(); }
         public void Remove(SafetyGadget gadget) { gadgets.Remove(gadget); MaintainBrake(); enabled = gadgets.Count > 0; DeviceStateChanged(); }
-        public void ResetHistory() { confirmedDirection.Reset(); turnHistory = pendingPassage = false; passedStop = retainedRed = null; brakeWarning.Reset(); manualBrake.Reset(); speedProfile.Reset(); ResetReadings(); }
+        public void ResetHistory() { signalRefresh = false; confirmedDirection.Reset(); turnHistory = pendingPassage = false; ClearRetainedRed(); brakeWarning.Reset(); manualBrake.Reset(); speedProfile.Reset(); ResetReadings(); }
         internal void RestoreDirection(int saved)
         {
             if (saved != -1 && saved != 1) return;
@@ -134,13 +171,14 @@ namespace RailwaySafetyGadgets
             history = turnHistory = false; queryTime = 0;
         }
         private void ResetReadings() { ClearDistance(); history = false; forbiddenEntry = null; NextSignal = null; DisplaySpeed = CurrentSpeed = NextSpeed = null; PermittedSpeed = null; queryTime = 0; ClearCabReading(); }
+        private void ClearRetainedRed() { retainedRed = null; retainedRedPosition = default(TrackPosition<RailTrack>); }
         private void ClearCabReading()
         {
             // A retained RED is useful across a transient unreadable signal,
             // but it must not survive loss of the entire signal provider. In
             // that state ALS is explicitly WHITE and non-protective; any
             // already latched emergency hold remains owned by BrakeIncident.
-            var red = Signals != null && Signals.Ready ? passedStop ?? retainedRed : null;
+            var red = retainedRed != null && Signals != null && Signals.Ready ? retainedRed : null;
             CabSignalLogic.Set(CabDisplay, red != null ? CabAspect.Red : CabAspect.White, red != null ? red.Name : null);
             CabDisplay.ProtectionStop = false;
         }
@@ -201,7 +239,7 @@ namespace RailwaySafetyGadgets
         internal void SignalSelectionChanged() { RefreshSignalMode(); }
         private void InvalidateSignalSelection()
         {
-            history = turnHistory = false; forbiddenEntry = passedStop = retainedRed = null; NextSignal = null; queryTime = 0;
+            history = turnHistory = false; forbiddenEntry = null; ClearRetainedRed(); NextSignal = null; queryTime = 0;
             CabSignalLogic.Set(CabDisplay, CabAspect.White); CabDisplay.ProtectionStop = null;
             // Keep emergency holds, RED acknowledgement, speed profile and deadlines.
         }
@@ -241,8 +279,14 @@ namespace RailwaySafetyGadgets
                 MaintainBrake();
                 if (Time.unscaledTime >= queryTime)
                 {
+                    signalRefresh = false;
                     queryTime = Time.unscaledTime + .2f;
                     QueryDisplays();
+                }
+                else if (signalRefresh)
+                {
+                    signalRefresh = false;
+                    QuerySignalOnly();
                 }
                 UpdateAutomaticBrake();
             }
@@ -284,7 +328,7 @@ namespace RailwaySafetyGadgets
                     if (history || forbiddenEntry != null || generation != signalGeneration || nextDirection != direction) queryTime = 0;
                     if (!signalActive || !ready || generation != signalGeneration) turnHistory = false;
                     history = false; forbiddenEntry = null;
-                    if (nextDirection != direction) passedStop = retainedRed = null;
+                    if (nextDirection != direction) ClearRetainedRed();
                 }
                 if (nextDirection != direction && turnHistory && turnPosition.Direction * turnPosition.Direction == 1)
                 {
@@ -326,12 +370,23 @@ namespace RailwaySafetyGadgets
                                         if (cabSource != null && cabSource.IsBlockBoundary(signal))
                                         {
                                             var capture = Signals as ISignalPassageSource;
-                                            forbiddenEntry = capture != null ? capture.CapturePassage(signal) : signal.ProhibitsPassing ? signal : null;
+                                            // Only a permitted entry needs a block-scoped
+                                            // authorization snapshot. A SPAD is queued below,
+                                            // without retaining its signal as display state.
+                                            forbiddenEntry = !signal.ProhibitsPassing && capture != null ? capture.CapturePassage(signal) : null;
                                         }
                                         if (signal.ProhibitsPassing)
                                         {
-                                            LastPassage = signal.Name; pendingPassage = true; passedStop = signal;
+                                            LastPassage = signal.Name; pendingPassage = true;
                                         }
+#if RSG_LSR_TRACE
+                                        Main.Log("[LSR] SignalPassed=" + signal.Name + " SPAD=" + signal.ProhibitsPassing + " span=" + signal.Span + " direction=" + nextDirection);
+#endif
+                                        // Passage invalidates only forward indication. The independent
+                                        // pending incident survives this handoff, including without ABU.
+                                        if (retainedRed != null && leg.Track == retainedRedPosition.Track &&
+                                            leg.Direction == retainedRedPosition.Direction &&
+                                            RouteLogic.ActuallyPassed(leg, retainedRedPosition.Span, travelled)) ClearRetainedRed();
                                         queryTime = 0;
                                     }
                                 }
@@ -441,8 +496,35 @@ namespace RailwaySafetyGadgets
             }
         }
 
+        private void QuerySignalOnly()
+        {
+            if (!Has(DeviceKind.Signal)) return;
+            try
+            {
+                if (!Position(out var now, out var dir, out var speed)) return;
+                RouteLogic.Walk(NativeRoute.Instance, now, 20000, aheadBuffer, aheadVisited);
+                QuerySignal(aheadBuffer, now, true);
+            }
+            catch (Exception ex) { ClearCabReading(); Main.ErrorOnce("cab-reading", ex); }
+        }
+
         private void QuerySignal(List<RouteLeg<RailTrack>> ahead, TrackPosition<RailTrack> now, bool showSignal)
         {
+#if RSG_LSR_TRACE
+            var oldSignalName = NextSignal?.Name;
+#endif
+            // Snapshot position remains usable when the original controller is
+            // temporarily unreadable. It can hold RED only while still ahead on
+            // this route; a passed signal never owns the forward display.
+            if (retainedRed != null && ahead.Count > 0)
+            {
+                bool stillAhead = false;
+                foreach (var leg in ahead)
+                    if (leg.Track == retainedRedPosition.Track && leg.Direction == retainedRedPosition.Direction &&
+                        leg.Contains(retainedRedPosition.Span) && leg.DistanceAt(retainedRedPosition.Span) >= 0)
+                    { stillAhead = true; break; }
+                if (!stillAhead) ClearRetainedRed();
+            }
             NextSignal = null;
             if (showSignal && (Signals == null || !Signals.Ready))
             {
@@ -450,7 +532,8 @@ namespace RailwaySafetyGadgets
                 // signal. Drop provider-owned RED/entry state so ALS stays
                 // WHITE and cannot resurrect stale protection when the source
                 // later returns.
-                passedStop = retainedRed = forbiddenEntry = null;
+                ClearRetainedRed(); forbiddenEntry = null;
+                ClearCabReading();
                 return;
             }
             if (showSignal && Signals != null && Signals.Ready)
@@ -484,13 +567,17 @@ namespace RailwaySafetyGadgets
                 // not a clear from that source. A farther readable head cannot
                 // release it while the original reading is unavailable.
                 if (NextSignal != null && CabDisplay.Known && (retainedRed == null || retainedRed.Valid))
+                {
                     retainedRed = CabDisplay.Red > 0 && !CabDisplay.SplitYellowRed ? NextSignal : null;
-                var previousRed = passedStop ?? (!CabDisplay.Known || (retainedRed != null && !retainedRed.Valid) ? retainedRed : null);
+                    if (retainedRed != null) retainedRedPosition = new TrackPosition<RailTrack>(retainedRed.Track, retainedRed.Span, retainedRed.Direction);
+                    else ClearRetainedRed();
+                }
+                var previousRed = (!CabDisplay.Known || (retainedRed != null && !retainedRed.Valid) ? retainedRed : null);
                 if (previousRed != null)
                 {
                     // A native clear ends retained RED; temporary data loss does not.
                     var live = previousRed.ReadDisplay();
-                    if (live.Known && (live.Red <= 0 || live.SplitYellowRed)) passedStop = retainedRed = null;
+                    if (live.Known && (live.Red <= 0 || live.SplitYellowRed)) ClearRetainedRed();
                     else CabSignalLogic.Set(CabDisplay, CabAspect.Red, previousRed.Name);
                 }
                 // Display state never substitutes for a measured crossing.
@@ -498,6 +585,9 @@ namespace RailwaySafetyGadgets
             }
             WarningKind warning = signalWarnings.Observe(CabDisplay.Known ? CabDisplay.Key : null, CabDisplay.Warning, Time.time);
             if (showSignal && warning != WarningKind.None) PlayWarning(DeviceKind.Signal, warning);
+#if RSG_LSR_TRACE
+            Main.Log("[LSR] Rescan old=" + oldSignalName + " next=" + NextSignal?.Name + " aspect=" + CabDisplay.Key + " direction=" + now.Direction + " position=" + now.Span + " retained=" + retainedRed?.Name);
+#endif
         }
 
         private void QuerySpeed(List<RouteLeg<RailTrack>> ahead, int dir, float speed)

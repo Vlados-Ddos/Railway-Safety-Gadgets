@@ -105,84 +105,106 @@ namespace RailwaySafetyGadgets
             var materials = new Material[materialData.Count];
             Shader shader = Shader.Find("Standard");
             if (shader == null) throw new InvalidOperationException("Unity Standard shader is unavailable");
-            for (int i = 0; i < materials.Length; i++)
+            GameObject root = null;
+            var allocatedMeshes = new List<Mesh>();
+            try
             {
-                var md = materialData[i]; var tx = md["textures"];
-                var mat = new Material(shader) { name = (string)md["name"] };
-                var c = md["color"];
-                mat.color = new Color((float)c[0], (float)c[1], (float)c[2], (float)md["alpha"]);
-                mat.SetFloat("_Metallic", (float)md["metallic"]);
-                mat.SetFloat("_Glossiness", 1 - (float)md["roughness"]);
-                Map(mat, "_MainTex", dir, (string)tx["albedo"], false);
-                if ((string)tx["albedo"] == "Panel_BaseColor.png") LocalizedPanels.Register(mat, dir);
-                if (tx["normalUnity"] != null)
+                for (int i = 0; i < materials.Length; i++)
                 {
-                    Map(mat, "_BumpMap", dir, (string)tx["normalUnity"], true);
-                    mat.EnableKeyword("_NORMALMAP");
-                }
-                if (tx["metallicSmoothness"] != null)
-                {
-                    Map(mat, "_MetallicGlossMap", dir, (string)tx["metallicSmoothness"], true);
-                    mat.SetFloat("_GlossMapScale", 1);
-                    mat.EnableKeyword("_METALLICGLOSSMAP");
-                }
-                Map(mat, "_OcclusionMap", dir, (string)tx["ao"], true);
-                // Per-renderer property blocks drive existing physical meshes.
-                Map(mat, "_EmissionMap", dir, (string)tx["emission"], false);
-                if (tx["emissionRed"] != null && tx["emissionYellow"] != null)
-                    SplitMasks[mat] = new[] { Texture2D.blackTexture,
-                        Texture(Path.Combine(dir, (string)tx["emissionRed"]), false),
-                        Texture(Path.Combine(dir, (string)tx["emissionYellow"]), false),
-                        Texture(Path.Combine(dir, (string)tx["emission"]), false) };
-                mat.EnableKeyword("_EMISSION");
-                mat.SetColor("_EmissionColor", Color.black);
-                mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
-                if ((float)md["alpha"] < 1)
-                {
-                    mat.SetFloat("_Mode", 3);
-                    mat.SetInt("_SrcBlend", (int)BlendMode.One);
-                    mat.SetInt("_DstBlend", (int)BlendMode.OneMinusSrcAlpha);
-                    mat.SetInt("_ZWrite", 0);
-                    mat.EnableKeyword("_ALPHAPREMULTIPLY_ON");
-                    mat.renderQueue = 3000;
-                    mat.SetOverrideTag("RenderType", "Transparent");
-                }
-                materials[i] = mat;
-            }
-            var root = new GameObject("RSG_asset_" + kind);
-            root.SetActive(false); root.transform.SetParent(Main.Staging.transform, false);
-            using (var reader = new BinaryReader(File.OpenRead(Path.Combine(dir, "model.rsgm")), Encoding.UTF8))
-            {
-                if (Encoding.ASCII.GetString(reader.ReadBytes(4)) != "RSGM" || reader.ReadInt32() != 1) throw new InvalidDataException("Unsupported model format");
-                int count = reader.ReadInt32();
-                for (int i = 0; i < count; i++)
-                {
-                    string name = Encoding.UTF8.GetString(reader.ReadBytes(reader.ReadInt32()));
-                    var node = new GameObject(name);
-                    node.transform.SetParent(root.transform, false);
-                    node.transform.localPosition = ReadVector(reader);
-                    int n = reader.ReadInt32();
-                    var vertices = new Vector3[n]; var normals = new Vector3[n]; var uv = new Vector2[n];
-                    for (int v = 0; v < n; v++) { vertices[v] = ReadVector(reader); normals[v] = ReadVector(reader); uv[v] = new Vector2(reader.ReadSingle(), reader.ReadSingle()); }
-                    var mesh = new Mesh { name = name, indexFormat = n > 65535 ? IndexFormat.UInt32 : IndexFormat.UInt16 };
-                    mesh.vertices = vertices; mesh.normals = normals; mesh.uv = uv;
-                    int sub = reader.ReadInt32(); mesh.subMeshCount = sub;
-                    var slots = new Material[sub];
-                    for (int s = 0; s < sub; s++)
+                    var md = materialData[i]; var tx = md["textures"];
+                    var mat = new Material(shader);
+                    materials[i] = mat;
+                    mat.name = (string)md["name"];
+                    var c = md["color"];
+                    mat.color = new Color((float)c[0], (float)c[1], (float)c[2], (float)md["alpha"]);
+                    mat.SetFloat("_Metallic", (float)md["metallic"]);
+                    mat.SetFloat("_Glossiness", 1 - (float)md["roughness"]);
+                    Map(mat, "_MainTex", dir, (string)tx["albedo"], false);
+                    if ((string)tx["albedo"] == "Panel_BaseColor.png") LocalizedPanels.Register(mat, dir);
+                    if (tx["normalUnity"] != null)
                     {
-                        slots[s] = materials[reader.ReadInt32()];
-                        int len = reader.ReadInt32(); var indices = new int[len];
-                        for (int t = 0; t < len; t++) indices[t] = reader.ReadInt32();
-                        mesh.SetTriangles(indices, s, false);
+                        Map(mat, "_BumpMap", dir, (string)tx["normalUnity"], true);
+                        mat.EnableKeyword("_NORMALMAP");
                     }
-                    mesh.RecalculateBounds(); mesh.RecalculateTangents();
-                    node.AddComponent<MeshFilter>().sharedMesh = mesh;
-                    node.AddComponent<MeshRenderer>().sharedMaterials = slots;
-                    mesh.UploadMeshData(false);
+                    if (tx["metallicSmoothness"] != null)
+                    {
+                        Map(mat, "_MetallicGlossMap", dir, (string)tx["metallicSmoothness"], true);
+                        mat.SetFloat("_GlossMapScale", 1);
+                        mat.EnableKeyword("_METALLICGLOSSMAP");
+                    }
+                    Map(mat, "_OcclusionMap", dir, (string)tx["ao"], true);
+                    // Per-renderer property blocks drive existing physical meshes.
+                    Map(mat, "_EmissionMap", dir, (string)tx["emission"], false);
+                    if (tx["emissionRed"] != null && tx["emissionYellow"] != null)
+                        SplitMasks[mat] = new[] { Texture2D.blackTexture,
+                            Texture(Path.Combine(dir, (string)tx["emissionRed"]), false),
+                            Texture(Path.Combine(dir, (string)tx["emissionYellow"]), false),
+                            Texture(Path.Combine(dir, (string)tx["emission"]), false) };
+                    mat.EnableKeyword("_EMISSION");
+                    mat.SetColor("_EmissionColor", Color.black);
+                    mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
+                    if ((float)md["alpha"] < 1)
+                    {
+                        mat.SetFloat("_Mode", 3);
+                        mat.SetInt("_SrcBlend", (int)BlendMode.One);
+                        mat.SetInt("_DstBlend", (int)BlendMode.OneMinusSrcAlpha);
+                        mat.SetInt("_ZWrite", 0);
+                        mat.EnableKeyword("_ALPHAPREMULTIPLY_ON");
+                        mat.renderQueue = 3000;
+                        mat.SetOverrideTag("RenderType", "Transparent");
+                    }
                 }
-                if (reader.BaseStream.Position != reader.BaseStream.Length) throw new InvalidDataException("Model has trailing data");
+                root = new GameObject("RSG_asset_" + kind);
+                root.SetActive(false); root.transform.SetParent(Main.Staging.transform, false);
+                using (var reader = new BinaryReader(File.OpenRead(Path.Combine(dir, "model.rsgm")), Encoding.UTF8))
+                {
+                    if (Encoding.ASCII.GetString(reader.ReadBytes(4)) != "RSGM" || reader.ReadInt32() != 1) throw new InvalidDataException("Unsupported model format");
+                    int count = reader.ReadInt32();
+                    for (int i = 0; i < count; i++)
+                    {
+                        string name = Encoding.UTF8.GetString(reader.ReadBytes(reader.ReadInt32()));
+                        var node = new GameObject(name);
+                        node.transform.SetParent(root.transform, false);
+                        node.transform.localPosition = ReadVector(reader);
+                        int n = reader.ReadInt32();
+                        var vertices = new Vector3[n]; var normals = new Vector3[n]; var uv = new Vector2[n];
+                        for (int v = 0; v < n; v++) { vertices[v] = ReadVector(reader); normals[v] = ReadVector(reader); uv[v] = new Vector2(reader.ReadSingle(), reader.ReadSingle()); }
+                        var mesh = new Mesh { name = name, indexFormat = n > 65535 ? IndexFormat.UInt32 : IndexFormat.UInt16 };
+                        allocatedMeshes.Add(mesh);
+                        mesh.vertices = vertices; mesh.normals = normals; mesh.uv = uv;
+                        int sub = reader.ReadInt32(); mesh.subMeshCount = sub;
+                        var slots = new Material[sub];
+                        for (int s = 0; s < sub; s++)
+                        {
+                            slots[s] = materials[reader.ReadInt32()];
+                            int len = reader.ReadInt32(); var indices = new int[len];
+                            for (int t = 0; t < len; t++) indices[t] = reader.ReadInt32();
+                            mesh.SetTriangles(indices, s, false);
+                        }
+                        mesh.RecalculateBounds(); mesh.RecalculateTangents();
+                        node.AddComponent<MeshFilter>().sharedMesh = mesh;
+                        node.AddComponent<MeshRenderer>().sharedMaterials = slots;
+                        mesh.UploadMeshData(false);
+                    }
+                    if (reader.BaseStream.Position != reader.BaseStream.Length) throw new InvalidDataException("Model has trailing data");
+                }
+                return root;
             }
-            return root;
+            catch
+            {
+                // A failed model never enters Templates. Destroy everything
+                // allocated for it; successfully cached textures remain reusable.
+                if (root != null) UnityEngine.Object.Destroy(root);
+                foreach (var mesh in allocatedMeshes) UnityEngine.Object.Destroy(mesh);
+                foreach (var material in materials)
+                    if (material != null)
+                    {
+                        SplitMasks.Remove(material);
+                        LocalizedPanels.Unregister(material);
+                        UnityEngine.Object.Destroy(material);
+                    }
+                throw;
+            }
         }
 
         private static Vector3 ReadVector(BinaryReader r) { return new Vector3(r.ReadSingle(), r.ReadSingle(), r.ReadSingle()); }
@@ -197,10 +219,16 @@ namespace RailwaySafetyGadgets
             Texture2D texture;
             if (Textures.TryGetValue(key, out texture)) return texture;
             texture = new Texture2D(2, 2, TextureFormat.RGBA32, true, linear) { name = Path.GetFileName(path), anisoLevel = 4 };
-            if (!ImageConversion.LoadImage(texture, File.ReadAllBytes(path), false)) throw new InvalidDataException(path);
-            texture.wrapMode = TextureWrapMode.Repeat;
-            Textures[key] = texture;
-            return texture;
+            try
+            {
+                // Materials and emission masks only use GPU sampling. Keep the
+                // mip chain, but release the otherwise unused CPU pixel copy.
+                if (!ImageConversion.LoadImage(texture, File.ReadAllBytes(path), true)) throw new InvalidDataException(path);
+                texture.wrapMode = TextureWrapMode.Repeat;
+                Textures[key] = texture;
+                return texture;
+            }
+            catch { UnityEngine.Object.Destroy(texture); throw; }
         }
         internal static Sprite Icon(string kind, bool dropped)
         {
@@ -210,12 +238,16 @@ namespace RailwaySafetyGadgets
             // Standard icon lettering needs prefiltered mip levels in small slots.
             // Ghost outlines retain their original non-mipmapped edge treatment.
             var tex = new Texture2D(2, 2, TextureFormat.RGBA32, !dropped, false) { name = kind + (dropped ? "_icon_ghost" : "_icon"), filterMode = dropped ? FilterMode.Bilinear : FilterMode.Trilinear, wrapMode = TextureWrapMode.Clamp };
-            if (!ImageConversion.LoadImage(tex, File.ReadAllBytes(path), false)) throw new InvalidDataException(path);
-            tex.Apply(!dropped, true);
-            icon = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(.5f, .5f), 100, 0, SpriteMeshType.FullRect);
-            icon.name = tex.name;
-            Icons[path] = icon;
-            return icon;
+            try
+            {
+                if (!ImageConversion.LoadImage(tex, File.ReadAllBytes(path), false)) throw new InvalidDataException(path);
+                tex.Apply(!dropped, true);
+                icon = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(.5f, .5f), 100, 0, SpriteMeshType.FullRect);
+                icon.name = tex.name;
+                Icons[path] = icon;
+                return icon;
+            }
+            catch { UnityEngine.Object.Destroy(tex); throw; }
         }
     }
 }

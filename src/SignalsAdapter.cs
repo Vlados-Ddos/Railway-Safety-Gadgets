@@ -19,6 +19,7 @@ namespace RailwaySafetyGadgets.SignalsIntegration
         private int count = -1;
         private float refreshAt;
         private static int registryRevision;
+        private static bool hooksInstalled, eventsBound;
         private int seenRevision = -1;
         private struct IndexEntry
         {
@@ -35,11 +36,49 @@ namespace RailwaySafetyGadgets.SignalsIntegration
 
         public SignalsAdapter()
         {
+            if (hooksInstalled) return;
             var harmony = new Harmony("denis.railway-safety-gadgets.signals");
             harmony.Patch(AccessTools.Method(typeof(DVSignal), "ChangeAspect"), prefix: new HarmonyMethod(typeof(SignalsAdapter), nameof(BeforeAspect)));
             harmony.Patch(AccessTools.Method(typeof(DVSignal), "TurnOff"), prefix: new HarmonyMethod(typeof(SignalsAdapter), nameof(BeforeTurnOff)));
             harmony.Patch(AccessTools.Method(typeof(SignalManager), "RegisterController"), prefix: new HarmonyMethod(typeof(SignalsAdapter), nameof(RegistryChanged)));
             harmony.Patch(AccessTools.Method(typeof(SignalManager), "UnregisterController"), prefix: new HarmonyMethod(typeof(SignalsAdapter), nameof(RegistryChanged)));
+            hooksInstalled = true;
+        }
+        private static void SetEvents(bool active)
+        {
+            if (eventsBound == active) return;
+            if (active)
+            {
+                SignalManager.AspectChanged += AspectChanged;
+                SignalManager.RequiredBranchChanged += BranchChanged;
+                TrackReserver.ReservationMade += SignalChanged;
+                TrackReserver.ReservationCleared += SignalChanged;
+                TrackChecker.OnTrackOccupiedManually += LocoService.RequestSignalRefresh;
+                TrackChecker.OnTrackClearedManually += LocoService.RequestSignalRefresh;
+            }
+            else
+            {
+                SignalManager.AspectChanged -= AspectChanged;
+                SignalManager.RequiredBranchChanged -= BranchChanged;
+                TrackReserver.ReservationMade -= SignalChanged;
+                TrackReserver.ReservationCleared -= SignalChanged;
+                TrackChecker.OnTrackOccupiedManually -= LocoService.RequestSignalRefresh;
+                TrackChecker.OnTrackClearedManually -= LocoService.RequestSignalRefresh;
+            }
+            eventsBound = active;
+        }
+        private static void AspectChanged(DVSignal signal, Signals.Game.Aspects.IAspect aspect) { SignalChanged(signal); }
+        private static void SignalChanged(DVSignal signal)
+        {
+#if RSG_LSR_TRACE
+            if (signal != null) Main.Log("[LSR] SignalChanged id=" + signal.Id + " aspect=" + signal.CurrentAspect?.Id);
+#endif
+            if (signal != null && signal.Parent == null) BranchChanged(signal.Controller, null);
+        }
+        private static void BranchChanged(BasicSignalController controller, int? branch)
+        {
+            if (!IsDistant(controller) && controller.PlacementInfo.HasValue)
+                LocoService.RequestSignalRefresh(controller.PlacementInfo.Value.Track);
         }
         private static void BeforeAspect(DVSignal __instance, int newAspect)
         {
@@ -86,6 +125,7 @@ namespace RailwaySafetyGadgets.SignalsIntegration
         public void Refresh()
         {
             var current = !UnloadWatcher.isUnloading && SignalManager.Running ? SignalManager.Instance : null;
+            SetEvents(current != null);
             if (current == null)
             {
                 if (manager != null || count != -1) { Generation++; manager = null; count = -1; byTrack.Clear(); indexSnapshot.Clear(); behind.Clear(); behindVisited.Clear(); }
@@ -154,7 +194,8 @@ namespace RailwaySafetyGadgets.SignalsIntegration
             var manuallyOccupied = TrackChecker.GetAllOccupiedTracks();
             var entered = forbiddenEntry as Reading;
             bool insideEntry = entered != null && entered.Mode == mode && entered.Valid && entered.Contains(position);
-            bool forbidden = insideEntry && entered.ProhibitsPassing && (entered.PassageCaptured ? entered.DeniedAtPassage : true);
+            // A denied passage is an incident, not an aspect of the next signal.
+            // Only a captured permission participates in current-block handling.
             // A captured native permission is bounded to the entered block.
             // No distance/time grace or reservation guessed from proximity.
             bool reservedEntry = insideEntry && entered.ReservedAtPassage && ReservationActive(entered.Signal);
@@ -175,8 +216,8 @@ namespace RailwaySafetyGadgets.SignalsIntegration
             var nextNative = upcoming == null || upcoming.Mode != mode || !upcoming.Valid ? null : upcoming.Signal;
             CabSignalDetail detail;
             bool known;
-            var aspect = Evaluate(nextNative, upcoming != null && upcoming.IsOld, current && !reservedEntry && !shuntingEntry, forbidden, out detail, out known);
-            if (reservedEntry && !forbidden && (nextNative == null || nextNative.IsOff || nextNative.CurrentAspect == null))
+            var aspect = Evaluate(nextNative, upcoming != null && upcoming.IsOld, current && !reservedEntry && !shuntingEntry, out detail, out known);
+            if (reservedEntry && (nextNative == null || nextNative.IsOff || nextNative.CurrentAspect == null))
             {
                 // Keep the entered permission for protection, but never let the
                 // previous reserved signal overwrite a readable next signal.
@@ -185,6 +226,9 @@ namespace RailwaySafetyGadgets.SignalsIntegration
             CabSignalLogic.Set(display, aspect, upcoming == null ? null : upcoming.Name);
             display.Detail = detail; display.Known = known;
             display.Key += ":" + detail;
+#if RSG_LSR_TRACE
+            Main.Log("[LSR] Selected id=" + nextNative?.Id + " aspect=" + nextNative?.CurrentAspect?.Id + " display=" + display.Key);
+#endif
             if (!known) display.ProtectionStop = null;
             // A confirmed STOP remains decisive even if a preceding block is dirty.
             // Unknown occupation cannot rearm an acknowledged RED as a confirmed clear.
@@ -252,11 +296,11 @@ namespace RailwaySafetyGadgets.SignalsIntegration
             return ReservationActive(signal) && !signal.IsOff && signal.CurrentAspect != null &&
                 signal.CurrentAspect.GetDefinition() != null && !signal.CurrentAspect.DisallowPassing;
         }
-        private static CabAspect Evaluate(DVSignal signal, bool old, bool current, bool forbidden,
+        private static CabAspect Evaluate(DVSignal signal, bool old, bool current,
             out CabSignalDetail detail, out bool known)
         {
             detail = CabSignalDetail.None; known = true;
-            if (current || forbidden) return CabAspect.Red;
+            if (current) return CabAspect.Red;
             var aspect = signal == null || signal.IsOff ? null : signal.CurrentAspect;
             if (aspect == null) { known = false; return CabAspect.White; }
             // Actual native prohibition wins over a misleading ID or a reservation.
@@ -327,7 +371,7 @@ namespace RailwaySafetyGadgets.SignalsIntegration
             private readonly BasicSignalController controller;
             private readonly SignalDisplay display = new SignalDisplay();
             private DVSignal passageSignal;
-            internal bool PassageCaptured, DeniedAtPassage, ReservedAtPassage, ShuntingPermissionAtPassage;
+            internal bool PassageCaptured, ReservedAtPassage, ShuntingPermissionAtPassage;
             internal readonly CabSignalMode Mode;
             internal bool IsOld { get { return controller.IsOld; } }
             internal Reading(BasicSignalController controller, CabSignalMode mode) { this.controller = controller; Mode = mode; }
@@ -335,7 +379,7 @@ namespace RailwaySafetyGadgets.SignalsIntegration
             {
                 var signal = PassageSignal;
                 return new Reading(controller, Mode) { passageSignal = signal, PassageCaptured = true,
-                    DeniedAtPassage = ProhibitsPassing, ReservedAtPassage = ReservedPermission(signal),
+                    ReservedAtPassage = ReservedPermission(signal),
                     ShuntingPermissionAtPassage = signal != null && signal.IsShunting && !signal.IsOff &&
                         signal.CurrentAspect != null && signal.CurrentAspect.GetDefinition() != null && !signal.CurrentAspect.DisallowPassing };
             }
@@ -408,7 +452,7 @@ namespace RailwaySafetyGadgets.SignalsIntegration
             {
                 CabSignalDetail detail;
                 bool known;
-                CabSignalLogic.Set(display, Evaluate(Valid ? Signal : null, IsOld, false, false, out detail, out known), Name);
+                CabSignalLogic.Set(display, Evaluate(Valid ? Signal : null, IsOld, false, out detail, out known), Name);
                 display.Detail = detail; display.Known = known; display.Key += ":" + detail;
                 display.ProtectionStop = known ? (bool?)false : null;
                 return display;
